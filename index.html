@@ -360,15 +360,15 @@
               <ul class="text-xs text-slate-600 space-y-2 leading-relaxed">
                 <li class="flex items-start gap-2">
                   <span class="w-1.5 h-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0"></span>
-                  <span><strong>Members</strong> pay only for the shuttlecocks they use in the games they participate in.</span>
+                  <span><strong>Court Price</strong> is split equally among all players who participated in the session.</span>
                 </li>
                 <li class="flex items-start gap-2">
                   <span class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0"></span>
-                  <span><strong>Non-members</strong> pay for shuttlecocks + an equal split of the court cost with other non-members who played.</span>
+                  <span><strong>Shuttlecocks share</strong> is split equally among all players who participated in the session (Total shuttlecocks used &times; shuttle price &divide; number of participants).</span>
                 </li>
                 <li class="flex items-start gap-2">
                   <span class="w-1.5 h-1.5 rounded-full bg-accent-500 mt-1.5 shrink-0"></span>
-                  <span><strong>Shuttlecocks share</strong> is calculated per game: <code>(shuttlecocks used &times; shuttle price) &divide; (number of players in that game)</code>.</span>
+                  <span><strong>Calculations</strong> are done per person: <code>(total court + total shuttlecocks cost) &divide; (total participants)</code>.</span>
                 </li>
               </ul>
             </div>
@@ -692,11 +692,11 @@
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 class="text-lg font-bold text-slate-800 tracking-tight">Session Cost Breakdown & Billing Sheet</h3>
-                <p class="text-xs text-slate-500">See detailed payments for members (shuttlecocks only) and non-members (shuttlecocks + court split).</p>
+                <p class="text-xs text-slate-500">See detailed payments split equally for all players (shuttlecocks + court split).</p>
               </div>
               <div class="bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-600 flex items-center gap-2">
                 <i data-lucide="alert-circle" class="w-4 h-4 text-brand-600"></i>
-                <span>Active non-member court-split price: <strong class="text-amber-600" id="payment-court-split-share">IDR 0</strong> / player</span>
+                <span>Court price split per person: <strong class="text-amber-600" id="payment-court-split-share">IDR 0</strong> / player</span>
               </div>
             </div>
 
@@ -1182,6 +1182,20 @@
         g.teamB.forEach(pId => uniquePlayersSet.add(pId));
       });
       const uniquePlayers = Array.from(uniquePlayersSet);
+      const totalPlayersCount = uniquePlayers.length;
+
+      // Court fee split: split courtPrice equally among all players in this session
+      const courtSplitPerPlayer = totalPlayersCount > 0 ? courtPrice / totalPlayersCount : 0;
+
+      // Calculate total shuttlecocks used in this session
+      let totalShuttlecocksUsed = 0;
+      games.forEach(g => {
+        totalShuttlecocksUsed += g.shuttlecocksUsed || 0;
+      });
+
+      // Total shuttlecock cost share per player (split equally among session participants)
+      const totalShuttleCost = totalShuttlecocksUsed * shuttlecockPrice;
+      const shuttleCostPerPlayer = totalPlayersCount > 0 ? totalShuttleCost / totalPlayersCount : 0;
 
       // Find how many of them are non-members
       const nonMembersInSession = uniquePlayers.filter(pId => {
@@ -1189,9 +1203,6 @@
         return player && player.type === 'non-member';
       });
       const nonMemberCount = nonMembersInSession.length;
-
-      // Court fee split: split courtPrice equally among non-members playing in this session
-      const courtSplitPerNonMember = nonMemberCount > 0 ? courtPrice / nonMemberCount : 0;
 
       // Initialize calculations object for all unique players
       const playerStats = {};
@@ -1206,22 +1217,15 @@
           losses: 0,
           setsWon: 0,
           setsLost: 0,
-          shuttleCostShare: 0,
-          courtCostShare: (player && player.type === 'non-member') ? courtSplitPerNonMember : 0,
-          totalOwed: 0,
+          shuttleCostShare: shuttleCostPerPlayer,
+          courtCostShare: courtSplitPerPlayer,
+          totalOwed: shuttleCostPerPlayer + courtSplitPerPlayer,
           isPaid: session.paymentsPaid ? session.paymentsPaid.includes(pId) : false
         };
       });
 
-      // Loop through games to compute shuttlecock splits & player stats
+      // Loop through games to compute player match stats (wins, losses, sets)
       games.forEach(g => {
-        const totalGamePlayersCount = g.teamA.length + g.teamB.length;
-        if (totalGamePlayersCount === 0) return;
-
-        // Shuttlecocks split for this game
-        const gameShuttleCost = (g.shuttlecocksUsed || 0) * shuttlecockPrice;
-        const shuttleCostPerPlayer = gameShuttleCost / totalGamePlayersCount;
-
         // Determine sets won/lost per team
         // Set 1
         const set1A = g.set1.teamA;
@@ -1257,7 +1261,6 @@
         g.teamA.forEach(pId => {
           if (!playerStats[pId]) return; // Fallback
           playerStats[pId].gamesPlayed++;
-          playerStats[pId].shuttleCostShare += shuttleCostPerPlayer;
           playerStats[pId].setsWon += teamASets;
           playerStats[pId].setsLost += teamBSets;
           if (gameWinner === 'teamA') {
@@ -1271,7 +1274,6 @@
         g.teamB.forEach(pId => {
           if (!playerStats[pId]) return; // Fallback
           playerStats[pId].gamesPlayed++;
-          playerStats[pId].shuttleCostShare += shuttleCostPerPlayer;
           playerStats[pId].setsWon += teamBSets;
           playerStats[pId].setsLost += teamASets;
           if (gameWinner === 'teamB') {
@@ -1282,16 +1284,11 @@
         });
       });
 
-      // Compute total owed
-      Object.keys(playerStats).forEach(pId => {
-        playerStats[pId].totalOwed = playerStats[pId].shuttleCostShare + playerStats[pId].courtCostShare;
-      });
-
       return {
         playerStats,
         uniquePlayers,
         nonMemberCount,
-        courtSplitPerNonMember
+        courtSplitPerNonMember: courtSplitPerPlayer
       };
     }
 
@@ -2000,12 +1997,7 @@
       document.getElementById('payment-court-split-share').textContent = formatCurrency(calcs.courtSplitPerNonMember);
 
       const warningDiv = document.getElementById('payment-court-warning');
-      if (session.courtPrice > 0 && calcs.nonMemberCount === 0 && session.games && session.games.length > 0) {
-        warningDiv.classList.remove('hidden');
-        document.getElementById('payment-warning-court-price').textContent = formatCurrency(session.courtPrice);
-      } else {
-        warningDiv.classList.add('hidden');
-      }
+      warningDiv.classList.add('hidden');
 
       const playersList = Object.values(calcs.playerStats).sort((a, b) => a.name.localeCompare(b.name));
 
