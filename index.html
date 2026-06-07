@@ -1,0 +1,2282 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50 text-slate-800">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmashSync - Badminton Club Management</title>
+  <!-- Tailwind CSS v3 CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              300: '#86efac',
+              400: '#4ade80',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+              950: '#052e16',
+            },
+            accent: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              300: '#c4b5fd',
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              800: '#5b21b6',
+              900: '#4c1d95',
+              950: '#2e1065',
+            }
+          },
+          fontFamily: {
+            sans: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
+          },
+          boxShadow: {
+            glowing: '0 0 15px -3px rgba(34, 197, 94, 0.1), 0 4px 6px -4px rgba(34, 197, 94, 0.1)',
+            glowingAccent: '0 0 15px -3px rgba(139, 92, 246, 0.1), 0 4px 6px -4px rgba(139, 92, 246, 0.1)',
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Supabase JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Custom Micro-animations & CSS -->
+  <style>
+    body {
+      font-family: 'Outfit', 'Inter', sans-serif;
+    }
+    .glassmorphism {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(241, 245, 249, 0.5);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.3);
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.5);
+    }
+    .fade-in {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="h-full flex overflow-hidden bg-slate-50">
+
+  <!-- Sidebar -->
+  <aside class="w-64 border-r border-slate-200 bg-white flex flex-col h-full shrink-0 z-30 transition-all duration-300 lg:translate-x-0 -translate-x-full fixed lg:static" id="sidebar">
+    <!-- Brand Logo -->
+    <div class="h-16 flex items-center px-6 border-b border-slate-100 gap-3">
+      <div class="p-2 bg-gradient-to-tr from-brand-600 to-accent-600 rounded-xl shadow-glowing">
+        <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">SmashSync</h1>
+        <span class="text-xs text-brand-600 font-semibold tracking-widest uppercase">Badminton Club</span>
+      </div>
+    </div>
+
+    <!-- Navigation Menu -->
+    <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar">
+      <a href="#" onclick="switchTab('dashboard')" id="nav-dashboard" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-brand-700 bg-brand-50 border border-brand-100">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        <span class="font-medium">Dashboard</span>
+      </a>
+      <a href="#" onclick="switchTab('players')" id="nav-players" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80">
+        <i data-lucide="users" class="w-5 h-5"></i>
+        <span class="font-medium">Players</span>
+      </a>
+      <a href="#" onclick="switchTab('sessions')" id="nav-sessions" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80">
+        <i data-lucide="calendar" class="w-5 h-5"></i>
+        <span class="font-medium">Sessions</span>
+      </a>
+      <a href="#" onclick="switchTab('leaderboard')" id="nav-leaderboard" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80">
+        <i data-lucide="trophy" class="w-5 h-5"></i>
+        <span class="font-medium">Overall Leaderboard</span>
+      </a>
+    </nav>
+
+    <!-- Supabase Cloud Status -->
+    <div class="p-4 border-t border-slate-100 bg-slate-50/50">
+      <div class="bg-white rounded-xl p-3 border border-slate-200">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <i data-lucide="cloud" class="w-3.5 h-3.5"></i> Cloud Database
+        </h3>
+        <div id="supabase-status-badge" class="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-slate-50 border border-slate-100">
+          <span id="supabase-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse flex-shrink-0"></span>
+          <span id="supabase-status-text" class="text-xs text-slate-500">Connecting…</span>
+        </div>
+        <button onclick="exportDatabase()" class="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-xs font-medium transition-all">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Backup
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Sidebar Overlay -->
+  <div class="fixed inset-0 bg-slate-900/40 z-20 hidden" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50">
+    <!-- Top Header -->
+    <header class="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-6 z-10 shadow-sm">
+      <div class="flex items-center gap-4">
+        <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <h2 class="text-xl font-semibold text-slate-800 tracking-tight" id="view-title">Dashboard</h2>
+      </div>
+
+      <!-- Quick Session Stats / Info -->
+      <div class="flex items-center gap-3">
+        <div id="sync-status-badge" class="hidden sm:flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-full px-4 py-1.5 text-xs text-slate-600">
+          <span id="sync-status-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="sync-status-text">Connecting to Supabase…</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Scrollable content -->
+    <div class="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-6">
+
+      <!-- ========================================== -->
+      <!-- VIEW: DASHBOARD                            -->
+      <!-- ========================================== -->
+      <section id="view-section-dashboard" class="fade-in space-y-6">
+        <!-- Quick Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Stat Card 1 -->
+          <div class="glassmorphism p-5 rounded-2xl relative overflow-hidden group shadow-sm hover:border-slate-300 transition-all duration-300">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Players</p>
+                <h3 class="text-3xl font-extrabold mt-1 text-slate-800 tracking-tight" id="stat-total-players">0</h3>
+              </div>
+              <div class="p-3 bg-brand-500/10 text-brand-600 rounded-xl">
+                <i data-lucide="users" class="w-6 h-6"></i>
+              </div>
+            </div>
+            <div class="mt-4 flex gap-4 text-xs text-slate-500">
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-brand-500"></span> <span id="stat-members-count">0</span> Members</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> <span id="stat-nonmembers-count">0</span> Non-members</span>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-500 to-emerald-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+          </div>
+
+          <!-- Stat Card 2 -->
+          <div class="glassmorphism p-5 rounded-2xl relative overflow-hidden group shadow-sm hover:border-slate-300 transition-all duration-300">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sessions Held</p>
+                <h3 class="text-3xl font-extrabold mt-1 text-slate-800 tracking-tight" id="stat-total-sessions">0</h3>
+              </div>
+              <div class="p-3 bg-accent-500/10 text-accent-600 rounded-xl">
+                <i data-lucide="calendar" class="w-6 h-6"></i>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center gap-1 text-xs text-slate-500">
+              <i data-lucide="play" class="w-3.5 h-3.5 text-brand-600"></i>
+              <span>Active club schedules tracked</span>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-accent-500 to-purple-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+          </div>
+
+          <!-- Stat Card 3 -->
+          <div class="glassmorphism p-5 rounded-2xl relative overflow-hidden group shadow-sm hover:border-slate-300 transition-all duration-300">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Games Played</p>
+                <h3 class="text-3xl font-extrabold mt-1 text-slate-800 tracking-tight" id="stat-total-games">0</h3>
+              </div>
+              <div class="p-3 bg-blue-500/10 text-blue-600 rounded-xl">
+                <i data-lucide="swords" class="w-6 h-6"></i>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center gap-1.5 text-xs text-slate-500">
+              <span class="flex items-center gap-1 font-semibold text-blue-600" id="stat-avg-games-per-session">0</span>
+              <span>avg. games per session</span>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-cyan-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+          </div>
+
+          <!-- Stat Card 4 -->
+          <div class="glassmorphism p-5 rounded-2xl relative overflow-hidden group shadow-sm hover:border-slate-300 transition-all duration-300">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Shuttlecocks Consumed</p>
+                <h3 class="text-3xl font-extrabold mt-1 text-slate-800 tracking-tight" id="stat-total-shuttles">0</h3>
+              </div>
+              <div class="p-3 bg-red-500/10 text-red-600 rounded-xl">
+                <i data-lucide="circle-dot" class="w-6 h-6"></i>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center gap-1.5 text-xs text-slate-500">
+              <span class="flex items-center gap-1 font-semibold text-red-600" id="stat-avg-shuttles-per-game">0</span>
+              <span>avg. shuttlecocks per game</span>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 to-rose-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+          </div>
+        </div>
+
+        <!-- Dashboard Sub Sections -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Main Left area -->
+          <div class="lg:col-span-2 space-y-6">
+            <!-- Active/Recent Session Widget -->
+            <div class="glassmorphism rounded-2xl p-6 shadow-sm relative overflow-hidden">
+              <div class="flex justify-between items-center mb-6">
+                <div>
+                  <h3 class="text-lg font-bold text-slate-800 tracking-tight">Recent Session Monitor</h3>
+                  <p class="text-xs text-slate-500">Review outcomes and bills from the latest session.</p>
+                </div>
+                <button onclick="switchTab('sessions')" class="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center gap-1">
+                  All Sessions <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>
+              </div>
+
+              <!-- Content displayed when sessions exist -->
+              <div id="dashboard-recent-session-container">
+                <div class="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200 mb-6 gap-4">
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-600">
+                      <i data-lucide="calendar" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-base font-bold text-slate-800" id="recent-session-date">-</h4>
+                      <p class="text-xs text-slate-500">
+                        Court: <span class="text-slate-700 font-semibold" id="recent-session-court-price">-</span> | 
+                        Shuttle: <span class="text-slate-700 font-semibold" id="recent-session-shuttle-price">-</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex gap-4">
+                    <div class="text-left md:text-right">
+                      <span class="text-xs text-slate-400 block font-semibold uppercase tracking-wider">Games</span>
+                      <span class="text-lg font-bold text-slate-800" id="recent-session-games-count">0</span>
+                    </div>
+                    <div class="text-left md:text-right border-l border-slate-200 pl-4">
+                      <span class="text-xs text-slate-400 block font-semibold uppercase tracking-wider">Shuttles</span>
+                      <span class="text-lg font-bold text-slate-800" id="recent-session-shuttles-count">0</span>
+                    </div>
+                    <div class="text-left md:text-right border-l border-slate-200 pl-4">
+                      <span class="text-xs text-slate-400 block font-semibold uppercase tracking-wider">Players</span>
+                      <span class="text-lg font-bold text-slate-800" id="recent-session-players-count">0</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <!-- Session Leaderboard Snapshot -->
+                  <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <i data-lucide="trophy" class="w-4 h-4 text-amber-500"></i> Top Performers this Session
+                    </h4>
+                    <div class="space-y-2.5" id="recent-session-top-players">
+                      <!-- Rendered JS -->
+                    </div>
+                  </div>
+                  <!-- Session Payments Snapshot -->
+                  <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <i data-lucide="receipt" class="w-4 h-4 text-brand-600"></i> Top Billing / Status
+                    </h4>
+                    <div class="space-y-2.5" id="recent-session-top-billing">
+                      <!-- Rendered JS -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Fallback when no sessions exist -->
+              <div id="dashboard-recent-session-fallback" class="hidden py-10 flex flex-col items-center justify-center text-center">
+                <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-4">
+                  <i data-lucide="calendar-off" class="w-8 h-8"></i>
+                </div>
+                <h4 class="text-base font-semibold text-slate-700">No Sessions Logged Yet</h4>
+                <p class="text-xs text-slate-500 max-w-sm mt-1">Start by creating a new session to record court bookings, games, and cost splits.</p>
+                <button onclick="switchTab('sessions')" class="mt-4 px-4 py-2 bg-gradient-to-r from-brand-600 to-accent-600 hover:from-brand-500 hover:to-accent-500 text-white font-semibold text-xs rounded-xl shadow-md transition-all duration-300 flex items-center gap-1.5">
+                  <i data-lucide="plus" class="w-4 h-4"></i> Create First Session
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right sidebar -->
+          <div class="space-y-6">
+            <!-- Club Standings overview -->
+            <div class="glassmorphism rounded-2xl p-6 shadow-sm">
+              <div class="flex justify-between items-center mb-6">
+                <div>
+                  <h3 class="text-lg font-bold text-slate-800 tracking-tight">Leaderboard Top 3</h3>
+                  <p class="text-xs text-slate-500">All-time club win rate rankings.</p>
+                </div>
+                <button onclick="switchTab('leaderboard')" class="text-xs font-semibold text-brand-600 hover:text-brand-700">
+                  View All
+                </button>
+              </div>
+              <div class="space-y-3" id="dashboard-all-time-top">
+                <!-- Rendered JS -->
+              </div>
+            </div>
+
+            <!-- Quick Info card -->
+            <div class="bg-gradient-to-br from-brand-50/50 to-white border border-brand-100 rounded-2xl p-6 shadow-sm relative overflow-hidden">
+              <div class="absolute -right-8 -top-8 w-24 h-24 bg-brand-500/5 rounded-full blur-xl"></div>
+              <h3 class="text-sm font-bold text-brand-700 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <i data-lucide="info" class="w-4 h-4"></i> Split Logic Summary
+              </h3>
+              <ul class="text-xs text-slate-600 space-y-2 leading-relaxed">
+                <li class="flex items-start gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0"></span>
+                  <span><strong>Members</strong> pay only for the shuttlecocks they use in the games they participate in.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0"></span>
+                  <span><strong>Non-members</strong> pay for shuttlecocks + an equal split of the court cost with other non-members who played.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-accent-500 mt-1.5 shrink-0"></span>
+                  <span><strong>Shuttlecocks share</strong> is calculated per game: <code>(shuttlecocks used &times; shuttle price) &divide; (number of players in that game)</code>.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW: PLAYERS                              -->
+      <!-- ========================================== -->
+      <section id="view-section-players" class="fade-in space-y-6 hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Add Player Form -->
+          <div class="glassmorphism p-6 rounded-2xl shadow-sm h-fit">
+            <h3 class="text-lg font-bold text-slate-800 tracking-tight mb-2">Add New Player</h3>
+            <p class="text-xs text-slate-500 mb-6 font-medium">Input player information to add them to the club registry.</p>
+            
+            <form id="add-player-form" onsubmit="handleAddPlayer(event)" class="space-y-4">
+              <div>
+                <label for="player-name" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Player Name</label>
+                <input type="text" id="player-name" required placeholder="e.g. Taufik Hidayat" 
+                  class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-sm font-medium">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Membership Status</label>
+                <div class="grid grid-cols-2 gap-3">
+                  <label class="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition-all group has-[:checked]:border-brand-500/50 has-[:checked]:bg-brand-50/30">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
+                      <span class="text-xs font-bold text-slate-600 group-hover:text-slate-800">Member</span>
+                    </div>
+                    <input type="radio" name="player-type" value="member" checked class="w-4 h-4 text-brand-500 border-slate-300 focus:ring-brand-500 rounded-full">
+                  </label>
+                  <label class="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition-all group has-[:checked]:border-amber-500/50 has-[:checked]:bg-amber-50/30">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                      <span class="text-xs font-bold text-slate-600 group-hover:text-slate-800">Non-Member</span>
+                    </div>
+                    <input type="radio" name="player-type" value="non-member" class="w-4 h-4 text-amber-500 border-slate-300 focus:ring-amber-500 rounded-full">
+                  </label>
+                </div>
+              </div>
+
+              <button type="submit" class="w-full py-3 bg-gradient-to-r from-brand-600 to-emerald-600 hover:from-brand-500 hover:to-emerald-500 text-white font-semibold text-sm rounded-xl shadow-md transition-all duration-300 flex items-center justify-center gap-2">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Add to Database
+              </button>
+            </form>
+          </div>
+
+          <!-- Players Table -->
+          <div class="lg:col-span-2 glassmorphism p-6 rounded-2xl shadow-sm flex flex-col min-h-[400px]">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h3 class="text-lg font-bold text-slate-800 tracking-tight">Registry of Players</h3>
+                <p class="text-xs text-slate-500">Total registered members and casual players.</p>
+              </div>
+              
+              <!-- Search and filter -->
+              <div class="flex items-center gap-3">
+                <div class="relative max-w-xs">
+                  <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                  <input type="text" id="player-search" oninput="renderPlayersTable()" placeholder="Search players..." 
+                    class="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-xs font-medium">
+                </div>
+                <select id="player-type-filter" onchange="renderPlayersTable()" 
+                  class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-600 focus:outline-none focus:border-brand-500 transition-all text-xs font-semibold">
+                  <option value="all">All Types</option>
+                  <option value="member">Members</option>
+                  <option value="non-member">Non-Members</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Table Wrapper -->
+            <div class="flex-1 overflow-x-auto custom-scrollbar">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                    <th class="py-3.5 px-4">Player Name</th>
+                    <th class="py-3.5 px-4">Status</th>
+                    <th class="py-3.5 px-4 text-center">Sessions Played</th>
+                    <th class="py-3.5 px-4 text-center">Total Games</th>
+                    <th class="py-3.5 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="players-table-body" class="divide-y divide-slate-100 text-sm font-medium text-slate-600">
+                  <!-- Rendered JS -->
+                </tbody>
+              </table>
+              
+              <!-- Fallback -->
+              <div id="players-table-fallback" class="hidden py-16 flex flex-col items-center justify-center text-center">
+                <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+                  <i data-lucide="users" class="w-6 h-6"></i>
+                </div>
+                <h4 class="text-sm font-semibold text-slate-700">No players match the search criteria</h4>
+                <p class="text-xs text-slate-500 mt-1">Try resetting the search filters or add a new player.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW: SESSIONS                             -->
+      <!-- ========================================== -->
+      <section id="view-section-sessions" class="fade-in space-y-6 hidden">
+        
+        <!-- Tab Sub-header Navigation -->
+        <div id="sessions-sub-tabs" class="flex gap-4 border-b border-slate-200 pb-px">
+          <button onclick="switchSessionSubView('list')" id="btn-session-sub-list" class="px-4 py-2 border-b-2 border-brand-500 text-brand-700 text-sm font-bold tracking-tight">
+            All Sessions
+          </button>
+          <button onclick="switchSessionSubView('detail')" id="btn-session-sub-detail" class="px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 text-sm font-semibold tracking-tight hidden">
+            Session Details & Dashboard
+          </button>
+        </div>
+
+        <!-- SUB-VIEW: SESSIONS LIST -->
+        <div id="session-sub-view-list" class="space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Create Session Form -->
+            <div class="glassmorphism p-6 rounded-2xl shadow-sm h-fit">
+              <h3 class="text-lg font-bold text-slate-800 tracking-tight mb-2">Create Session</h3>
+              <p class="text-xs text-slate-500 mb-6 font-medium">Create a session booking, defining the court rental cost and cost per shuttlecock.</p>
+              
+              <form id="create-session-form" onsubmit="handleCreateSession(event)" class="space-y-4">
+                <div>
+                  <label for="session-date" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Session Date</label>
+                  <input type="date" id="session-date" required
+                    class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-sm font-medium">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label for="session-court-price" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Court Price (IDR)</label>
+                    <input type="number" id="session-court-price" required min="0" placeholder="e.g. 150000"
+                      class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-sm font-medium">
+                  </div>
+                  <div>
+                    <label for="session-shuttle-price" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Shuttlecock (IDR)</label>
+                    <input type="number" id="session-shuttle-price" required min="0" placeholder="e.g. 6000"
+                      class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-sm font-medium">
+                  </div>
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-gradient-to-r from-accent-600 to-purple-600 hover:from-accent-500 hover:to-purple-500 text-white font-semibold text-sm rounded-xl shadow-md transition-all duration-300 flex items-center justify-center gap-2">
+                  <i data-lucide="plus-circle" class="w-4 h-4"></i> Initialize Session
+                </button>
+              </form>
+            </div>
+
+            <!-- Sessions List Card -->
+            <div class="lg:col-span-2 glassmorphism p-6 rounded-2xl shadow-sm flex flex-col min-h-[400px]">
+              <div class="flex justify-between items-center mb-6">
+                <div>
+                  <h3 class="text-lg font-bold text-slate-800 tracking-tight">Active & Closed Sessions</h3>
+                  <p class="text-xs text-slate-500">Select any session to drill down into games, calculations, and billing sheets.</p>
+                </div>
+              </div>
+
+              <!-- Sessions Grid/List -->
+              <div class="flex-1 overflow-y-auto max-h-[500px] custom-scrollbar pr-1" id="sessions-list-container">
+                <!-- Rendered JS -->
+              </div>
+
+              <!-- Fallback -->
+              <div id="sessions-list-fallback" class="hidden py-16 flex flex-col items-center justify-center text-center">
+                <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+                  <i data-lucide="calendar" class="w-6 h-6"></i>
+                </div>
+                <h4 class="text-sm font-semibold text-slate-700">No Sessions Logged Yet</h4>
+                <p class="text-xs text-slate-500 mt-1">Create a session using the builder form on the left.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-VIEW: SESSION DETAIL & GAMES DASHBOARD -->
+        <div id="session-sub-view-detail" class="space-y-6 hidden">
+          <!-- Session Context Header -->
+          <div class="glassmorphism p-6 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+            <div class="flex items-center gap-4">
+              <button onclick="switchSessionSubView('list')" class="p-2.5 rounded-xl bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition-all">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+              </button>
+              <div>
+                <span class="text-xs font-bold text-brand-600 tracking-wider uppercase">Active Session Details</span>
+                <h3 class="text-xl font-bold text-slate-800 tracking-tight mt-0.5" id="detail-session-date">June 7, 2026</h3>
+                <div class="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-500">
+                  <span class="flex items-center gap-1"><i data-lucide="building" class="w-3.5 h-3.5"></i> Court Price: <strong class="text-slate-700" id="detail-court-price">-</strong></span>
+                  <span class="text-slate-300">•</span>
+                  <span class="flex items-center gap-1"><i data-lucide="circle-dot" class="w-3.5 h-3.5"></i> Shuttle price: <strong class="text-slate-700" id="detail-shuttle-price">-</strong></span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Quick Stat Badges inside Detail Header -->
+            <div class="flex items-center gap-4 border-t md:border-t-0 md:border-l border-slate-200 pt-4 md:pt-0 md:pl-6">
+              <div class="text-left">
+                <span class="text-xs text-slate-400 font-semibold uppercase">Games</span>
+                <span class="text-lg font-bold text-slate-800 block mt-0.5" id="detail-total-games">0</span>
+              </div>
+              <div class="text-left border-l border-slate-200 pl-4">
+                <span class="text-xs text-slate-400 font-semibold uppercase">Total Shuttles</span>
+                <span class="text-lg font-bold text-slate-800 block mt-0.5" id="detail-total-shuttles">0</span>
+              </div>
+              <div class="text-left border-l border-slate-200 pl-4">
+                <span class="text-xs text-slate-400 font-semibold uppercase">Non-members</span>
+                <span class="text-lg font-bold text-amber-600 block mt-0.5" id="detail-total-nonmembers">0</span>
+              </div>
+              <button onclick="confirmDeleteSession()" class="ml-2 p-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-all" title="Delete Session">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section Tabs inside Detail view -->
+          <div class="flex gap-4 border-b border-slate-200">
+            <button onclick="switchSessionDetailTab('games')" id="tab-btn-games" class="px-4 py-2 border-b-2 border-brand-500 text-brand-700 text-sm font-bold tracking-tight">
+              Games Log (<span id="detail-tab-games-count">0</span>)
+            </button>
+            <button onclick="switchSessionDetailTab('payments')" id="tab-btn-payments" class="px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 text-sm font-semibold tracking-tight">
+              Payment Splits
+            </button>
+            <button onclick="switchSessionDetailTab('leaderboard')" id="tab-btn-leaderboard" class="px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 text-sm font-semibold tracking-tight">
+              Session Leaderboard
+            </button>
+          </div>
+
+          <!-- DETAIL TAB Content: GAMES LOG -->
+          <div id="detail-tab-content-games" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Add Game Panel -->
+            <div class="glassmorphism p-6 rounded-2xl shadow-sm h-fit">
+              <h3 class="text-lg font-bold text-slate-800 tracking-tight mb-2">Record Game</h3>
+              <p class="text-xs text-slate-500 mb-6 font-medium">Record sets scores, player matches, and shuttlecock count for a single game (max 4 players total).</p>
+              
+              <form id="record-game-form" onsubmit="handleRecordGame(event)" class="space-y-4">
+                <!-- Players Selector -->
+                <div class="space-y-3">
+                  <div>
+                    <h4 class="text-xs font-bold text-brand-600 uppercase tracking-wider mb-2">Team A</h4>
+                    <div class="grid grid-cols-1 gap-2">
+                      <select id="game-teama-player1" required class="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-none focus:border-brand-500 transition-all text-xs font-medium w-full">
+                        <option value="">-- Select Player 1 --</option>
+                      </select>
+                      <select id="game-teama-player2" class="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-none focus:border-brand-500 transition-all text-xs font-medium w-full">
+                        <option value="">-- Select Player 2 (Optional) --</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 class="text-xs font-bold text-accent-600 uppercase tracking-wider mb-2">Team B</h4>
+                    <div class="grid grid-cols-1 gap-2">
+                      <select id="game-teamb-player1" required class="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-none focus:border-brand-500 transition-all text-xs font-medium w-full">
+                        <option value="">-- Select Player 1 --</option>
+                      </select>
+                      <select id="game-teamb-player2" class="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-none focus:border-brand-500 transition-all text-xs font-medium w-full">
+                        <option value="">-- Select Player 2 (Optional) --</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Game Scores & Shuttlecocks -->
+                <div class="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Set 1 Score</label>
+                    <div class="flex items-center gap-1">
+                      <input type="number" id="game-set1-teama" min="0" required placeholder="A" class="bg-white border border-slate-200 rounded-xl px-2.5 py-2 text-center text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500 transition-all text-xs font-bold w-full">
+                      <span class="text-slate-400 text-xs font-bold">:</span>
+                      <input type="number" id="game-set1-teamb" min="0" required placeholder="B" class="bg-white border border-slate-200 rounded-xl px-2.5 py-2 text-center text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500 transition-all text-xs font-bold w-full">
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Set 2 Score</label>
+                    <div class="flex items-center gap-1">
+                      <input type="number" id="game-set2-teama" min="0" required placeholder="A" class="bg-white border border-slate-200 rounded-xl px-2.5 py-2 text-center text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500 transition-all text-xs font-bold w-full">
+                      <span class="text-slate-400 text-xs font-bold">:</span>
+                      <input type="number" id="game-set2-teamb" min="0" required placeholder="B" class="bg-white border border-slate-200 rounded-xl px-2.5 py-2 text-center text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500 transition-all text-xs font-bold w-full">
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label for="game-shuttles" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Shuttlecocks Used</label>
+                  <input type="number" id="game-shuttles" required min="0" placeholder="e.g. 3"
+                    class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-sm font-medium">
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-gradient-to-r from-brand-600 to-emerald-600 hover:from-brand-500 hover:to-emerald-500 text-white font-semibold text-sm rounded-xl shadow-md transition-all duration-300 flex items-center justify-center gap-2">
+                  <i data-lucide="plus" class="w-4 h-4"></i> Add Game to Log
+                </button>
+              </form>
+            </div>
+
+            <!-- Games Log List -->
+            <div class="lg:col-span-2 glassmorphism p-6 rounded-2xl shadow-sm flex flex-col min-h-[400px]">
+              <h3 class="text-lg font-bold text-slate-800 tracking-tight mb-4">Recorded Games</h3>
+              
+              <!-- Games Grid/Cards -->
+              <div class="flex-1 space-y-4 overflow-y-auto max-h-[550px] custom-scrollbar pr-1" id="games-list-container">
+                <!-- Rendered JS -->
+              </div>
+
+              <!-- Fallback -->
+              <div id="games-list-fallback" class="hidden py-16 flex flex-col items-center justify-center text-center">
+                <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+                  <i data-lucide="swords" class="w-6 h-6"></i>
+                </div>
+                <h4 class="text-sm font-semibold text-slate-700">No games recorded in this session</h4>
+                <p class="text-xs text-slate-500 mt-1">Select teams, scores, and shuttlecocks on the left to add a game.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- DETAIL TAB Content: PAYMENT SPLITS -->
+          <div id="detail-tab-content-payments" class="glassmorphism p-6 rounded-2xl shadow-sm hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 class="text-lg font-bold text-slate-800 tracking-tight">Session Cost Breakdown & Billing Sheet</h3>
+                <p class="text-xs text-slate-500">See detailed payments for members (shuttlecocks only) and non-members (shuttlecocks + court split).</p>
+              </div>
+              <div class="bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-600 flex items-center gap-2">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-brand-600"></i>
+                <span>Active non-member court-split price: <strong class="text-amber-600" id="payment-court-split-share">IDR 0</strong> / player</span>
+              </div>
+            </div>
+
+            <!-- Court Split Status Warning -->
+            <div id="payment-court-warning" class="hidden p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2.5 animate-pulse">
+              <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0 mt-0.5 text-amber-600"></i>
+              <div>
+                <span class="font-bold">No non-members participated:</span> The court price of <strong id="payment-warning-court-price">IDR 0</strong> could not be split or recovered from players, as only member players participated in this session. Members are exempted from court fees by club rules.
+              </div>
+            </div>
+
+            <!-- Payments Table -->
+            <div class="overflow-x-auto custom-scrollbar">
+              <table class="w-full text-left border-collapse font-medium">
+                <thead>
+                  <tr class="border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                    <th class="py-3.5 px-4">Player</th>
+                    <th class="py-3.5 px-4 text-center">Status</th>
+                    <th class="py-3.5 px-4 text-center">Games Played</th>
+                    <th class="py-3.5 px-4 text-right">Court Fee Share</th>
+                    <th class="py-3.5 px-4 text-right">Shuttlecock Fee Share</th>
+                    <th class="py-3.5 px-4 text-right">Total Owed</th>
+                    <th class="py-3.5 px-4 text-center">Paid Status</th>
+                  </tr>
+                </thead>
+                <tbody id="payments-table-body" class="divide-y divide-slate-100 text-sm text-slate-600">
+                  <!-- Rendered JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- DETAIL TAB Content: SESSION LEADERBOARD -->
+          <div id="detail-tab-content-leaderboard" class="glassmorphism p-6 rounded-2xl shadow-sm hidden space-y-6">
+            <div>
+              <h3 class="text-lg font-bold text-slate-800 tracking-tight">Session Performance Standings</h3>
+              <p class="text-xs text-slate-500">Wins, losses, and set differentials specific to this session's match history.</p>
+            </div>
+
+            <!-- Leaderboard Table -->
+            <div class="overflow-x-auto custom-scrollbar">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                    <th class="py-3.5 px-4 text-center w-12 bg-transparent">Rank</th>
+                    <th class="py-3.5 px-4">Player</th>
+                    <th class="py-3.5 px-4 text-center">Status</th>
+                    <th class="py-3.5 px-4 text-center">Played</th>
+                    <th class="py-3.5 px-4 text-center">Won</th>
+                    <th class="py-3.5 px-4 text-center">Lost</th>
+                    <th class="py-3.5 px-4 text-center">Win Rate</th>
+                    <th class="py-3.5 px-4 text-center">Sets Diff</th>
+                  </tr>
+                </thead>
+                <tbody id="session-leaderboard-table-body" class="divide-y divide-slate-100 text-sm font-medium text-slate-600">
+                  <!-- Rendered JS -->
+                </tbody>
+              </table>
+              
+              <!-- Fallback -->
+              <div id="session-leaderboard-fallback" class="hidden py-16 flex flex-col items-center justify-center text-center">
+                <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+                  <i data-lucide="trophy" class="w-6 h-6"></i>
+                </div>
+                <h4 class="text-sm font-semibold text-slate-700">No matches to compute standings</h4>
+                <p class="text-xs text-slate-500 mt-1">Standings will automatically calculate once games are added to this session.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW: OVERALL LEADERBOARD                  -->
+      <!-- ========================================== -->
+      <section id="view-section-leaderboard" class="fade-in space-y-6 hidden">
+        <div class="glassmorphism p-6 rounded-2xl shadow-sm flex flex-col min-h-[400px]">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h3 class="text-lg font-bold text-slate-800 tracking-tight">All-Time Club Standings</h3>
+              <p class="text-xs text-slate-500">Cumulative player statistics aggregated across all recorded sessions.</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+              <select id="leaderboard-sort-by" onchange="renderOverallLeaderboard()" 
+                class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-600 focus:outline-none focus:border-brand-500 transition-all text-xs font-semibold">
+                <option value="winrate">Sort by Win Rate</option>
+                <option value="wins">Sort by Wins</option>
+                <option value="played">Sort by Games Played</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Leaderboard Table -->
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                  <th class="py-3.5 px-4 text-center w-12">Rank</th>
+                  <th class="py-3.5 px-4">Player</th>
+                  <th class="py-3.5 px-4 text-center">Status</th>
+                  <th class="py-3.5 px-4 text-center">Sessions</th>
+                  <th class="py-3.5 px-4 text-center">Games Played</th>
+                  <th class="py-3.5 px-4 text-center">Won</th>
+                  <th class="py-3.5 px-4 text-center">Lost</th>
+                  <th class="py-3.5 px-4 text-center">Sets Differential</th>
+                  <th class="py-3.5 px-4 text-right">Win Rate</th>
+                </tr>
+              </thead>
+              <tbody id="overall-leaderboard-table-body" class="divide-y divide-slate-100 text-sm font-medium text-slate-600">
+                <!-- Rendered JS -->
+              </tbody>
+            </table>
+
+            <!-- Fallback -->
+            <div id="overall-leaderboard-fallback" class="hidden py-16 flex flex-col items-center justify-center text-center">
+              <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+                <i data-lucide="trophy" class="w-6 h-6"></i>
+              </div>
+              <h4 class="text-sm font-semibold text-slate-700">No session statistics logged yet</h4>
+              <p class="text-xs text-slate-500 mt-1">Once you record sessions and complete games, the rankings will render here.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT STATE & APPLICATION ENGINE      -->
+  <!-- ========================================== -->
+  <script>
+    // --- Supabase Configuration ---
+    const SUPABASE_URL = 'https://wpqkrialfjcriokujnuu.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_eISCObZUU4iSBWJzWOnN-g_Gz6IJOQj';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // --- Application State ---
+    let appData = {
+      players: [],
+      sessions: []
+    };
+
+    // Current active tabs / navigation state
+    let activeTab = 'dashboard';
+    let activeSessionId = null; // ID of session currently open in detail tab
+    let activeSessionSubView = 'list'; // 'list' or 'detail'
+    let activeSessionDetailTab = 'games'; // 'games', 'payments', 'leaderboard'
+
+    // --- Currency Formatter ---
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0
+      }).format(amount);
+    }
+
+    // --- Mock Data Generator (Loads if local storage is empty) ---
+    const mockPlayers = [
+      { id: 'p-1', name: 'Taufik Hidayat', type: 'member' },
+      { id: 'p-2', name: 'Lee Chong Wei', type: 'non-member' },
+      { id: 'p-3', name: 'Lin Dan', type: 'member' },
+      { id: 'p-4', name: 'Viktor Axelsen', type: 'non-member' },
+      { id: 'p-5', name: 'Marcus Gideon', type: 'member' },
+      { id: 'p-6', name: 'Kevin Sanjaya', type: 'member' },
+      { id: 'p-7', name: 'Jonatan Christie', type: 'non-member' }
+    ];
+
+    const mockSessions = [
+      {
+        id: 's-1',
+        date: '2026-06-01',
+        courtPrice: 150000,
+        shuttlecockPrice: 6000,
+        games: [
+          {
+            id: 'g-1-1',
+            teamA: ['p-1', 'p-3'], // Taufik & Lin Dan (Members)
+            teamB: ['p-2', 'p-4'], // Lee Chong Wei & Viktor Axelsen (Non-members)
+            set1: { teamA: 21, teamB: 18 },
+            set2: { teamA: 21, teamB: 19 },
+            shuttlecocksUsed: 4,
+            winner: 'teamA'
+          },
+          {
+            id: 'g-1-2',
+            teamA: ['p-1', 'p-5'], // Taufik & Marcus (Members)
+            teamB: ['p-2', 'p-6'], // Lee Chong Wei & Kevin (Non-member & Member)
+            set1: { teamA: 19, teamB: 21 },
+            set2: { teamA: 18, teamB: 21 },
+            shuttlecocksUsed: 3,
+            winner: 'teamB'
+          },
+          {
+            id: 'g-1-3',
+            teamA: ['p-3', 'p-6'], // Lin Dan & Kevin (Members)
+            teamB: ['p-4', 'p-7'], // Viktor & Jonatan (Non-members)
+            set1: { teamA: 21, teamB: 15 },
+            set2: { teamA: 22, teamB: 20 },
+            shuttlecocksUsed: 5,
+            winner: 'teamA'
+          }
+        ],
+        paymentsPaid: ['p-1', 'p-3', 'p-5', 'p-6'] // some marked paid
+      },
+      {
+        id: 's-2',
+        date: '2026-06-05',
+        courtPrice: 120000,
+        shuttlecockPrice: 6500,
+        games: [
+          {
+            id: 'g-2-1',
+            teamA: ['p-1', 'p-2'], // Taufik & Lee Chong Wei (Member & Non-member)
+            teamB: ['p-3', 'p-7'], // Lin Dan & Jonatan (Member & Non-member)
+            set1: { teamA: 21, teamB: 23 },
+            set2: { teamA: 15, teamB: 21 },
+            shuttlecocksUsed: 4,
+            winner: 'teamB'
+          }
+        ],
+        paymentsPaid: []
+      }
+    ];
+
+    // --- Startup: Load from Supabase ---
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadState();
+      switchTab('dashboard');
+      lucide.createIcons();
+    });
+
+    async function loadState() {
+      setSupabaseStatus('connecting');
+      try {
+        const [{ data: players, error: pErr }, { data: sessions, error: sErr }] = await Promise.all([
+          supabaseClient.from('players').select('*').order('created_at', { ascending: true }),
+          supabaseClient.from('sessions').select('*').order('created_at', { ascending: true })
+        ]);
+
+        if (pErr || sErr) throw pErr || sErr;
+
+        appData.players = (players || []).map(p => ({
+          id: p.id,
+          name: p.name,
+          type: p.type
+        }));
+
+        appData.sessions = (sessions || []).map(s => ({
+          id: s.id,
+          date: s.date,
+          courtPrice: s.court_price,
+          shuttlecockPrice: s.shuttlecock_price,
+          games: s.games || [],
+          paymentsPaid: s.payments_paid || []
+        }));
+
+        setSupabaseStatus('connected');
+      } catch (e) {
+        console.error('Supabase load error:', e);
+        setSupabaseStatus('error');
+        // Fallback: keep appData as empty
+        appData = { players: [], sessions: [] };
+      }
+    }
+
+    function setSupabaseStatus(status) {
+      const dot = document.getElementById('supabase-dot');
+      const text = document.getElementById('supabase-status-text');
+      const headerDot = document.getElementById('sync-status-dot');
+      const headerText = document.getElementById('sync-status-text');
+      const badge = document.getElementById('sync-status-badge');
+      if (badge) badge.classList.remove('hidden');
+
+      if (status === 'connected') {
+        if (dot) { dot.className = 'w-2 h-2 rounded-full bg-brand-500 flex-shrink-0'; }
+        if (text) text.textContent = 'Supabase connected';
+        if (headerDot) headerDot.className = 'w-2 h-2 rounded-full bg-brand-500 animate-pulse';
+        if (headerText) headerText.textContent = 'Supabase Cloud';
+      } else if (status === 'saving') {
+        if (dot) { dot.className = 'w-2 h-2 rounded-full bg-blue-500 animate-pulse flex-shrink-0'; }
+        if (text) text.textContent = 'Saving…';
+        if (headerDot) headerDot.className = 'w-2 h-2 rounded-full bg-blue-400 animate-pulse';
+        if (headerText) headerText.textContent = 'Saving…';
+      } else if (status === 'error') {
+        if (dot) { dot.className = 'w-2 h-2 rounded-full bg-red-500 flex-shrink-0'; }
+        if (text) text.textContent = 'Connection error';
+        if (headerDot) headerDot.className = 'w-2 h-2 rounded-full bg-red-500';
+        if (headerText) headerText.textContent = 'Supabase Error';
+      } else {
+        if (dot) { dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse flex-shrink-0'; }
+        if (text) text.textContent = 'Connecting…';
+        if (headerDot) headerDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        if (headerText) headerText.textContent = 'Connecting…';
+      }
+    }
+
+    async function saveState() {
+      setSupabaseStatus('saving');
+      try {
+        // Upsert all players
+        if (appData.players.length > 0) {
+          const { error: pErr } = await supabaseClient.from('players').upsert(
+            appData.players.map(p => ({ id: p.id, name: p.name, type: p.type })),
+            { onConflict: 'id' }
+          );
+          if (pErr) throw pErr;
+        }
+
+        // Upsert all sessions
+        if (appData.sessions.length > 0) {
+          const { error: sErr } = await supabaseClient.from('sessions').upsert(
+            appData.sessions.map(s => ({
+              id: s.id,
+              date: s.date,
+              court_price: s.courtPrice,
+              shuttlecock_price: s.shuttlecockPrice,
+              games: s.games,
+              payments_paid: s.paymentsPaid
+            })),
+            { onConflict: 'id' }
+          );
+          if (sErr) throw sErr;
+        }
+
+        setSupabaseStatus('connected');
+      } catch (e) {
+        console.error('Supabase save error:', e);
+        setSupabaseStatus('error');
+      }
+
+      refreshCurrentView();
+    }
+
+
+
+    function refreshCurrentView() {
+      updateGlobalStats();
+      if (activeTab === 'dashboard') {
+        renderDashboard();
+      } else if (activeTab === 'players') {
+        renderPlayersTable();
+      } else if (activeTab === 'sessions') {
+        if (activeSessionSubView === 'list') {
+          renderSessionsList();
+        } else {
+          renderSessionDetail();
+        }
+      } else if (activeTab === 'leaderboard') {
+        renderOverallLeaderboard();
+      }
+    }
+
+    // --- Export Backup ---
+    function exportDatabase() {
+      const dataStr = JSON.stringify(appData, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', 'smashsync-backup.json');
+      linkElement.click();
+    }
+
+    async function deleteFromSupabase(table, id) {
+      const { error } = await supabaseClient.from(table).delete().eq('id', id);
+      if (error) console.error(`Error deleting from ${table}:`, error);
+    }
+
+    // --- Tab switcher ---
+    function switchTab(tabId) {
+      activeTab = tabId;
+      
+      // Hide all main views
+      document.getElementById('view-section-dashboard').classList.add('hidden');
+      document.getElementById('view-section-players').classList.add('hidden');
+      document.getElementById('view-section-sessions').classList.add('hidden');
+      document.getElementById('view-section-leaderboard').classList.add('hidden');
+
+      // Show selected view
+      document.getElementById(`view-section-${tabId}`).classList.remove('hidden');
+
+      // Reset sidebar navigation styles
+      const tabs = ['dashboard', 'players', 'sessions', 'leaderboard'];
+      tabs.forEach(t => {
+        const el = document.getElementById(`nav-${t}`);
+        if (t === tabId) {
+          el.className = "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-brand-700 bg-brand-50 border border-brand-100";
+        } else {
+          el.className = "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80";
+        }
+      });
+
+      // Update Title
+      const titleMap = {
+        'dashboard': 'Dashboard',
+        'players': 'Player Registry',
+        'sessions': 'Sessions Manager',
+        'leaderboard': 'Overall Leaderboard'
+      };
+      document.getElementById('view-title').textContent = titleMap[tabId];
+
+      // Reset Subviews if switching to session tab
+      if (tabId === 'sessions') {
+        if (activeSessionId) {
+          switchSessionSubView('detail');
+        } else {
+          switchSessionSubView('list');
+        }
+      }
+
+      // Close sidebar on mobile
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar.classList.contains('translate-x-0')) {
+        toggleSidebar();
+      }
+
+      refreshCurrentView();
+    }
+
+    // Toggle mobile sidebar
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      if (sidebar.classList.contains('-translate-x-full')) {
+        sidebar.classList.remove('-translate-x-full');
+        sidebar.classList.add('translate-x-0');
+        overlay.classList.remove('hidden');
+      } else {
+        sidebar.classList.remove('translate-x-0');
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      }
+    }
+
+    // --- Statistics and Math Engines ---
+    function updateGlobalStats() {
+      const totalPlayers = appData.players.length;
+      const members = appData.players.filter(p => p.type === 'member').length;
+      const nonmembers = totalPlayers - members;
+      
+      const totalSessions = appData.sessions.length;
+      let totalGames = 0;
+      let totalShuttles = 0;
+      
+      appData.sessions.forEach(s => {
+        totalGames += s.games ? s.games.length : 0;
+        s.games.forEach(g => {
+          totalShuttles += g.shuttlecocksUsed || 0;
+        });
+      });
+
+      const avgGames = totalSessions > 0 ? (totalGames / totalSessions).toFixed(1) : 0;
+      const avgShuttles = totalGames > 0 ? (totalShuttles / totalGames).toFixed(1) : 0;
+
+      document.getElementById('stat-total-players').textContent = totalPlayers;
+      document.getElementById('stat-members-count').textContent = members;
+      document.getElementById('stat-nonmembers-count').textContent = nonmembers;
+      document.getElementById('stat-total-sessions').textContent = totalSessions;
+      document.getElementById('stat-total-games').textContent = totalGames;
+      document.getElementById('stat-avg-games-per-session').textContent = avgGames;
+      document.getElementById('stat-total-shuttles').textContent = totalShuttles;
+      document.getElementById('stat-avg-shuttles-per-game').textContent = avgShuttles;
+    }
+
+    // --- Calculations for Payments and Leaderboard ---
+    // Returns key stats (wins, losses, set differentials, court split, shuttle split, total cost)
+    function calculateSessionStats(sessionId) {
+      const session = appData.sessions.find(s => s.id === sessionId);
+      if (!session) return { playerStats: {}, uniquePlayers: [], nonMemberCount: 0, courtSplitPerNonMember: 0 };
+
+      const courtPrice = session.courtPrice || 0;
+      const shuttlecockPrice = session.shuttlecockPrice || 0;
+      const games = session.games || [];
+
+      // Find all unique players who played in this session
+      const uniquePlayersSet = new Set();
+      games.forEach(g => {
+        g.teamA.forEach(pId => uniquePlayersSet.add(pId));
+        g.teamB.forEach(pId => uniquePlayersSet.add(pId));
+      });
+      const uniquePlayers = Array.from(uniquePlayersSet);
+
+      // Find how many of them are non-members
+      const nonMembersInSession = uniquePlayers.filter(pId => {
+        const player = appData.players.find(p => p.id === pId);
+        return player && player.type === 'non-member';
+      });
+      const nonMemberCount = nonMembersInSession.length;
+
+      // Court fee split: split courtPrice equally among non-members playing in this session
+      const courtSplitPerNonMember = nonMemberCount > 0 ? courtPrice / nonMemberCount : 0;
+
+      // Initialize calculations object for all unique players
+      const playerStats = {};
+      uniquePlayers.forEach(pId => {
+        const player = appData.players.find(p => p.id === pId);
+        playerStats[pId] = {
+          id: pId,
+          name: player ? player.name : 'Unknown Player',
+          type: player ? player.type : 'non-member',
+          gamesPlayed: 0,
+          wins: 0,
+          losses: 0,
+          setsWon: 0,
+          setsLost: 0,
+          shuttleCostShare: 0,
+          courtCostShare: (player && player.type === 'non-member') ? courtSplitPerNonMember : 0,
+          totalOwed: 0,
+          isPaid: session.paymentsPaid ? session.paymentsPaid.includes(pId) : false
+        };
+      });
+
+      // Loop through games to compute shuttlecock splits & player stats
+      games.forEach(g => {
+        const totalGamePlayersCount = g.teamA.length + g.teamB.length;
+        if (totalGamePlayersCount === 0) return;
+
+        // Shuttlecocks split for this game
+        const gameShuttleCost = (g.shuttlecocksUsed || 0) * shuttlecockPrice;
+        const shuttleCostPerPlayer = gameShuttleCost / totalGamePlayersCount;
+
+        // Determine sets won/lost per team
+        // Set 1
+        const set1A = g.set1.teamA;
+        const set1B = g.set1.teamB;
+        // Set 2
+        const set2A = g.set2.teamA;
+        const set2B = g.set2.teamB;
+
+        // Team A won sets
+        let teamASets = 0;
+        let teamBSets = 0;
+        if (set1A > set1B) teamASets++; else if (set1B > set1A) teamBSets++;
+        if (set2A > set2B) teamASets++; else if (set2B > set2A) teamBSets++;
+
+        // Determine overall game winner
+        let gameWinner = 'draw';
+        if (teamASets > teamBSets) {
+          gameWinner = 'teamA';
+        } else if (teamBSets > teamASets) {
+          gameWinner = 'teamB';
+        } else {
+          // Tie-break based on total points
+          const totalPointsA = set1A + set2A;
+          const totalPointsB = set1B + set2B;
+          if (totalPointsA > totalPointsB) {
+            gameWinner = 'teamA';
+          } else if (totalPointsB > totalPointsA) {
+            gameWinner = 'teamB';
+          }
+        }
+
+        // Apply stats to Team A players
+        g.teamA.forEach(pId => {
+          if (!playerStats[pId]) return; // Fallback
+          playerStats[pId].gamesPlayed++;
+          playerStats[pId].shuttleCostShare += shuttleCostPerPlayer;
+          playerStats[pId].setsWon += teamASets;
+          playerStats[pId].setsLost += teamBSets;
+          if (gameWinner === 'teamA') {
+            playerStats[pId].wins++;
+          } else if (gameWinner === 'teamB') {
+            playerStats[pId].losses++;
+          }
+        });
+
+        // Apply stats to Team B players
+        g.teamB.forEach(pId => {
+          if (!playerStats[pId]) return; // Fallback
+          playerStats[pId].gamesPlayed++;
+          playerStats[pId].shuttleCostShare += shuttleCostPerPlayer;
+          playerStats[pId].setsWon += teamBSets;
+          playerStats[pId].setsLost += teamASets;
+          if (gameWinner === 'teamB') {
+            playerStats[pId].wins++;
+          } else if (gameWinner === 'teamA') {
+            playerStats[pId].losses++;
+          }
+        });
+      });
+
+      // Compute total owed
+      Object.keys(playerStats).forEach(pId => {
+        playerStats[pId].totalOwed = playerStats[pId].shuttleCostShare + playerStats[pId].courtCostShare;
+      });
+
+      return {
+        playerStats,
+        uniquePlayers,
+        nonMemberCount,
+        courtSplitPerNonMember
+      };
+    }
+
+    // --- VIEW HANDLER: DASHBOARD ---
+    function renderDashboard() {
+      // Find latest session
+      if (appData.sessions.length === 0) {
+        document.getElementById('dashboard-recent-session-container').classList.add('hidden');
+        document.getElementById('dashboard-recent-session-fallback').classList.remove('hidden');
+      } else {
+        document.getElementById('dashboard-recent-session-container').classList.remove('hidden');
+        document.getElementById('dashboard-recent-session-fallback').classList.add('hidden');
+
+        // Sort sessions by date descending
+        const sortedSessions = [...appData.sessions].sort((a, b) => new Date(b.date) - new Date(a.date));
+        const recentSession = sortedSessions[0];
+
+        // Basic details
+        document.getElementById('recent-session-date').textContent = new Date(recentSession.date).toLocaleDateString('en-US', {
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
+        document.getElementById('recent-session-court-price').textContent = formatCurrency(recentSession.courtPrice);
+        document.getElementById('recent-session-shuttle-price').textContent = formatCurrency(recentSession.shuttlecockPrice);
+        
+        const gamesCount = recentSession.games ? recentSession.games.length : 0;
+        document.getElementById('recent-session-games-count').textContent = gamesCount;
+
+        let totalShuttles = 0;
+        recentSession.games.forEach(g => totalShuttles += g.shuttlecocksUsed || 0);
+        document.getElementById('recent-session-shuttles-count').textContent = totalShuttles;
+
+        // Perform calculation splits
+        const calcs = calculateSessionStats(recentSession.id);
+        document.getElementById('recent-session-players-count').textContent = calcs.uniquePlayers.length;
+
+        // Top players this session (sorted by wins descending, win rate, then set diff)
+        const sessionLeaderboardList = Object.values(calcs.playerStats).sort((a, b) => {
+          if (b.wins !== a.wins) return b.wins - a.wins;
+          const rateA = a.gamesPlayed > 0 ? (a.wins / a.gamesPlayed) : 0;
+          const rateB = b.gamesPlayed > 0 ? (b.wins / b.gamesPlayed) : 0;
+          if (rateB !== rateA) return rateB - rateA;
+          return (b.setsWon - b.setsLost) - (a.setsWon - a.setsLost);
+        }).slice(0, 3); // top 3 this session
+
+        const topPlayersContainer = document.getElementById('recent-session-top-players');
+        topPlayersContainer.innerHTML = '';
+        
+        if (sessionLeaderboardList.length === 0) {
+          topPlayersContainer.innerHTML = `
+            <div class="text-xs text-slate-400 text-center py-4">No match data logged yet.</div>
+          `;
+        } else {
+          sessionLeaderboardList.forEach((p, idx) => {
+            const winRate = p.gamesPlayed > 0 ? Math.round((p.wins / p.gamesPlayed) * 100) : 0;
+            const badgeClass = p.type === 'member' ? 'bg-brand-50 text-brand-700 border border-brand-200' : 'bg-amber-50 text-amber-700 border border-amber-200';
+            topPlayersContainer.innerHTML += `
+              <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold text-slate-400 w-4">${idx + 1}</span>
+                  <div>
+                    <span class="text-xs font-bold text-slate-800 block leading-none mb-1">${p.name}</span>
+                    <span class="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase ${badgeClass}">${p.type}</span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-brand-600 block">${p.wins} W - ${p.losses} L</span>
+                  <span class="text-[9px] text-slate-500 block">Win Rate: ${winRate}%</span>
+                </div>
+              </div>
+            `;
+          });
+        }
+
+        // Top billing list this session
+        const sessionBillingList = Object.values(calcs.playerStats).sort((a, b) => b.totalOwed - a.totalOwed).slice(0, 3);
+        const topBillingContainer = document.getElementById('recent-session-top-billing');
+        topBillingContainer.innerHTML = '';
+
+        if (sessionBillingList.length === 0) {
+          topBillingContainer.innerHTML = `
+            <div class="text-xs text-slate-400 text-center py-4">No player payment statistics to show.</div>
+          `;
+        } else {
+          sessionBillingList.forEach(p => {
+            const statusBadge = p.isPaid 
+              ? `<span class="flex items-center gap-1 text-[9px] font-bold text-emerald-600"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> PAID</span>`
+              : `<span class="flex items-center gap-1 text-[9px] font-bold text-amber-600"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> UNPAID</span>`;
+            
+            topBillingContainer.innerHTML += `
+              <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+                <div>
+                  <span class="text-xs font-bold text-slate-800 block leading-none mb-1">${p.name}</span>
+                  ${statusBadge}
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-slate-700 block">${formatCurrency(p.totalOwed)}</span>
+                  <span class="text-[9px] text-slate-500 block">Court: ${formatCurrency(p.courtCostShare)}</span>
+                </div>
+              </div>
+            `;
+          });
+        }
+      }
+
+      // Render Dashboard Overall top 3 Standings
+      renderDashboardOverallStandings();
+    }
+
+    function renderDashboardOverallStandings() {
+      const standings = computeAllTimeStandings().slice(0, 3);
+      const container = document.getElementById('dashboard-all-time-top');
+      container.innerHTML = '';
+
+      if (standings.length === 0) {
+        container.innerHTML = `
+          <div class="text-xs text-slate-400 text-center py-6">No data registered. Start adding players and recording games.</div>
+        `;
+      } else {
+        const medalColors = {
+          0: 'from-amber-400 to-yellow-600 shadow-yellow-500/10 text-white',
+          1: 'from-slate-300 to-slate-400 shadow-slate-400/10 text-slate-800',
+          2: 'from-amber-600 to-amber-700 shadow-amber-600/10 text-white'
+        };
+        
+        standings.forEach((p, idx) => {
+          const medalBg = medalColors[idx] || 'from-slate-200 to-slate-300 text-slate-600';
+          const rateVal = p.gamesPlayed > 0 ? Math.round((p.wins / p.gamesPlayed) * 100) : 0;
+          const badgeClass = p.type === 'member' ? 'bg-brand-50 text-brand-700 border border-brand-100' : 'bg-amber-50 text-amber-700 border border-amber-100';
+          
+          container.innerHTML += `
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition-all duration-200 shadow-sm">
+              <div class="w-7 h-7 rounded-lg bg-gradient-to-tr ${medalBg} flex items-center justify-center font-bold text-xs shadow-sm">
+                ${idx + 1}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-800 truncate">${p.name}</span>
+                  <span class="text-xs font-bold text-brand-600">${rateVal}%</span>
+                </div>
+                <div class="flex justify-between items-center mt-1">
+                  <span class="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${badgeClass}">${p.type}</span>
+                  <span class="text-[10px] text-slate-500">${p.wins} W / ${p.gamesPlayed} GP</span>
+                </div>
+                <!-- Progress bar -->
+                <div class="w-full bg-slate-100 rounded-full h-1 mt-2 overflow-hidden border border-slate-200">
+                  <div class="bg-gradient-to-r from-brand-500 to-emerald-400 h-full rounded-full" style="width: ${rateVal}%"></div>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+      }
+    }
+
+    // --- VIEW HANDLER: PLAYERS ---
+    function handleAddPlayer(e) {
+      e.preventDefault();
+      const nameInput = document.getElementById('player-name');
+      const typeInput = document.querySelector('input[name="player-type"]:checked');
+
+      if (!nameInput.value.trim()) return;
+
+      const newPlayer = {
+        id: 'p-' + Date.now(),
+        name: nameInput.value.trim(),
+        type: typeInput.value
+      };
+
+      appData.players.push(newPlayer);
+      saveState();
+
+      // Reset form
+      nameInput.value = '';
+      document.querySelector('input[name="player-type"][value="member"]').checked = true;
+    }
+
+    async function deletePlayer(pId) {
+      let isPlayed = false;
+      appData.sessions.forEach(s => {
+        s.games.forEach(g => {
+          if (g.teamA.includes(pId) || g.teamB.includes(pId)) {
+            isPlayed = true;
+          }
+        });
+      });
+
+      if (isPlayed) {
+        if (!confirm("This player has recorded game data in historical sessions. Deleting them will erase their name from those records, replacing it with 'Deleted Player'. Continue?")) {
+          return;
+        }
+      } else {
+        if (!confirm("Are you sure you want to remove this player?")) {
+          return;
+        }
+      }
+
+      appData.players = appData.players.filter(p => p.id !== pId);
+      
+      appData.sessions.forEach(s => {
+        if (s.paymentsPaid) {
+          s.paymentsPaid = s.paymentsPaid.filter(id => id !== pId);
+        }
+      });
+
+      // Delete player from Supabase
+      await deleteFromSupabase('players', pId);
+      saveState();
+    }
+
+    function renderPlayersTable() {
+      const search = document.getElementById('player-search').value.toLowerCase();
+      const filter = document.getElementById('player-type-filter').value;
+      const tbody = document.getElementById('players-table-body');
+      const fallback = document.getElementById('players-table-fallback');
+
+      tbody.innerHTML = '';
+
+      const playerGameCounts = {};
+      const playerSessionCounts = {};
+
+      appData.players.forEach(p => {
+        playerGameCounts[p.id] = 0;
+        playerSessionCounts[p.id] = new Set();
+      });
+
+      appData.sessions.forEach(s => {
+        s.games.forEach(g => {
+          const playersInGame = [...g.teamA, ...g.teamB];
+          playersInGame.forEach(pId => {
+            if (playerGameCounts[pId] !== undefined) {
+              playerGameCounts[pId]++;
+              playerSessionCounts[pId].add(s.id);
+            }
+          });
+        });
+      });
+
+      const filtered = appData.players.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(search);
+        const matchesFilter = filter === 'all' || p.type === filter;
+        return matchesSearch && matchesFilter;
+      });
+
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+
+      if (filtered.length === 0) {
+        fallback.classList.remove('hidden');
+      } else {
+        fallback.classList.add('hidden');
+        filtered.forEach(p => {
+          const badgeClass = p.type === 'member' 
+            ? 'bg-brand-50 text-brand-700 border border-brand-100' 
+            : 'bg-amber-50 text-amber-700 border border-amber-100';
+          
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors">
+              <td class="py-4 px-4 font-bold text-slate-800">${p.name}</td>
+              <td class="py-4 px-4">
+                <span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${badgeClass}">
+                  ${p.type}
+                </span>
+              </td>
+              <td class="py-4 px-4 text-center font-bold text-slate-500">${playerSessionCounts[p.id] ? playerSessionCounts[p.id].size : 0}</td>
+              <td class="py-4 px-4 text-center font-bold text-slate-500">${playerGameCounts[p.id] || 0}</td>
+              <td class="py-4 px-4 text-right">
+                <button onclick="deletePlayer('${p.id}')" class="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg transition-all" title="Remove Player">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      }
+      lucide.createIcons();
+    }
+
+    // --- VIEW HANDLER: SESSIONS LIST ---
+    function handleCreateSession(e) {
+      e.preventDefault();
+      const dateInput = document.getElementById('session-date');
+      const courtPriceInput = document.getElementById('session-court-price');
+      const shuttlePriceInput = document.getElementById('session-shuttle-price');
+
+      const newSession = {
+        id: 's-' + Date.now(),
+        date: dateInput.value,
+        courtPrice: parseFloat(courtPriceInput.value),
+        shuttlecockPrice: parseFloat(shuttlePriceInput.value),
+        games: [],
+        paymentsPaid: []
+      };
+
+      appData.sessions.push(newSession);
+      saveState();
+
+      openSessionDetail(newSession.id);
+
+      dateInput.value = '';
+      courtPriceInput.value = '';
+      shuttlePriceInput.value = '';
+    }
+
+    function switchSessionSubView(subView) {
+      activeSessionSubView = subView;
+      const btnList = document.getElementById('btn-session-sub-list');
+      const btnDetail = document.getElementById('btn-session-sub-detail');
+      
+      const listDiv = document.getElementById('session-sub-view-list');
+      const detailDiv = document.getElementById('session-sub-view-detail');
+
+      if (subView === 'list') {
+        btnList.className = "px-4 py-2 border-b-2 border-brand-500 text-brand-700 text-sm font-bold tracking-tight";
+        btnDetail.className = "px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 text-sm font-semibold tracking-tight hidden";
+        
+        listDiv.classList.remove('hidden');
+        detailDiv.classList.add('hidden');
+        
+        activeSessionId = null;
+        renderSessionsList();
+      } else {
+        btnList.className = "px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 text-sm font-semibold tracking-tight";
+        btnDetail.className = "px-4 py-2 border-b-2 border-brand-500 text-brand-700 text-sm font-bold tracking-tight block";
+        
+        listDiv.classList.add('hidden');
+        detailDiv.classList.remove('hidden');
+        
+        renderSessionDetail();
+      }
+    }
+
+    function renderSessionsList() {
+      const container = document.getElementById('sessions-list-container');
+      const fallback = document.getElementById('sessions-list-fallback');
+      container.innerHTML = '';
+
+      if (appData.sessions.length === 0) {
+        fallback.classList.remove('hidden');
+      } else {
+        fallback.classList.add('hidden');
+        
+        const sorted = [...appData.sessions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        sorted.forEach(s => {
+          const gamesCount = s.games ? s.games.length : 0;
+          let shuttlesCount = 0;
+          if (s.games) {
+            s.games.forEach(g => shuttlesCount += g.shuttlecocksUsed || 0);
+          }
+
+          const calcs = calculateSessionStats(s.id);
+          const paymentsCount = calcs.uniquePlayers.length;
+          const paidCount = s.paymentsPaid ? s.paymentsPaid.filter(id => calcs.uniquePlayers.includes(id)).length : 0;
+          
+          let paymentStatusBadge = '';
+          if (paymentsCount === 0) {
+            paymentStatusBadge = `<span class="px-2 py-0.5 bg-slate-100 border border-slate-200 text-slate-500 rounded-md text-[10px] font-bold">NO GAMES</span>`;
+          } else if (paidCount === paymentsCount) {
+            paymentStatusBadge = `<span class="px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-md text-[10px] font-bold">ALL PAID</span>`;
+          } else {
+            paymentStatusBadge = `<span class="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-md text-[10px] font-bold">${paidCount}/${paymentsCount} SETTLED</span>`;
+          }
+
+          const formattedDate = new Date(s.date).toLocaleDateString('en-US', {
+            weekday: 'short', year: 'numeric', month: 'long', day: 'numeric'
+          });
+
+          container.innerHTML += `
+            <div onclick="openSessionDetail('${s.id}')" class="group flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50/50 cursor-pointer mb-3.5 transition-all duration-300 shadow-sm">
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <i data-lucide="calendar" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h4 class="text-sm font-bold text-slate-800 leading-snug group-hover:text-brand-600 transition-colors">${formattedDate}</h4>
+                  <div class="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                    <span>Court: <strong class="text-slate-700 font-semibold">${formatCurrency(s.courtPrice)}</strong></span>
+                    <span class="text-slate-300">•</span>
+                    <span>Shuttlecock: <strong class="text-slate-700 font-semibold">${formatCurrency(s.shuttlecockPrice)}</strong></span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="flex items-center justify-between sm:justify-end gap-6 mt-4 sm:mt-0 border-t sm:border-t-0 border-slate-100 pt-3 sm:pt-0">
+                <div class="flex items-center gap-5 text-right">
+                  <div>
+                    <span class="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">Games Logged</span>
+                    <span class="text-sm font-bold text-slate-700">${gamesCount}</span>
+                  </div>
+                  <div class="border-l border-slate-100 pl-4">
+                    <span class="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">Shuttlecocks</span>
+                    <span class="text-sm font-bold text-slate-700">${shuttlesCount}</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  ${paymentStatusBadge}
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all"></i>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+      }
+      lucide.createIcons();
+    }
+
+    function openSessionDetail(sessionId) {
+      activeSessionId = sessionId;
+      switchSessionSubView('detail');
+    }
+
+    function confirmDeleteSession() {
+      if (!confirm("Are you sure you want to delete this session? This will remove all associated games and payment records.")) {
+        return;
+      }
+      appData.sessions = appData.sessions.filter(s => s.id !== activeSessionId);
+      saveState();
+      switchSessionSubView('list');
+    }
+
+    // --- VIEW HANDLER: SESSION DETAIL DASHBOARD ---
+    function switchSessionDetailTab(tabName) {
+      activeSessionDetailTab = tabName;
+      
+      const tabs = ['games', 'payments', 'leaderboard'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const content = document.getElementById(`detail-tab-content-${t}`);
+        
+        if (t === tabName) {
+          btn.className = "px-4 py-2 border-b-2 border-brand-500 text-brand-700 text-sm font-bold tracking-tight";
+          content.classList.remove('hidden');
+        } else {
+          btn.className = "px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 text-sm font-semibold tracking-tight";
+          content.classList.add('hidden');
+        }
+      });
+
+      renderSessionDetailTabContent();
+    }
+
+    function renderSessionDetail() {
+      const session = appData.sessions.find(s => s.id === activeSessionId);
+      if (!session) {
+        switchSessionSubView('list');
+        return;
+      }
+
+      document.getElementById('detail-session-date').textContent = new Date(session.date).toLocaleDateString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      });
+      document.getElementById('detail-court-price').textContent = formatCurrency(session.courtPrice);
+      document.getElementById('detail-shuttle-price').textContent = formatCurrency(session.shuttlecockPrice);
+
+      const gamesCount = session.games ? session.games.length : 0;
+      document.getElementById('detail-total-games').textContent = gamesCount;
+      document.getElementById('detail-tab-games-count').textContent = gamesCount;
+
+      let shuttlesCount = 0;
+      session.games.forEach(g => shuttlesCount += g.shuttlecocksUsed || 0);
+      document.getElementById('detail-total-shuttles').textContent = shuttlesCount;
+
+      populatePlayerDropdowns();
+      renderSessionDetailTabContent();
+    }
+
+    function populatePlayerDropdowns() {
+      const selectors = [
+        'game-teama-player1',
+        'game-teama-player2',
+        'game-teamb-player1',
+        'game-teamb-player2'
+      ];
+
+      const sortedPlayers = [...appData.players].sort((a, b) => a.name.localeCompare(b.name));
+
+      selectors.forEach(selId => {
+        const select = document.getElementById(selId);
+        const currentValue = select.value;
+        
+        select.innerHTML = '';
+        if (selId.includes('player2')) {
+          select.innerHTML = '<option value="">-- Select Player 2 (Optional) --</option>';
+        } else {
+          select.innerHTML = '<option value="">-- Select Player 1 --</option>';
+        }
+
+        sortedPlayers.forEach(p => {
+          select.innerHTML += `<option value="${p.id}">${p.name} (${p.type === 'member' ? 'Member' : 'Non-member'})</option>`;
+        });
+
+        if (currentValue && sortedPlayers.some(p => p.id === currentValue)) {
+          select.value = currentValue;
+        }
+      });
+    }
+
+    function renderSessionDetailTabContent() {
+      const session = appData.sessions.find(s => s.id === activeSessionId);
+      if (!session) return;
+
+      const calcs = calculateSessionStats(session.id);
+      document.getElementById('detail-total-nonmembers').textContent = calcs.nonMemberCount;
+
+      if (activeSessionDetailTab === 'games') {
+        renderGamesLog(session);
+      } else if (activeSessionDetailTab === 'payments') {
+        renderPaymentSplits(session, calcs);
+      } else if (activeSessionDetailTab === 'leaderboard') {
+        renderSessionLeaderboard(calcs);
+      }
+    }
+
+    function renderGamesLog(session) {
+      const container = document.getElementById('games-list-container');
+      const fallback = document.getElementById('games-list-fallback');
+      container.innerHTML = '';
+
+      const games = session.games || [];
+      if (games.length === 0) {
+        fallback.classList.remove('hidden');
+      } else {
+        fallback.classList.add('hidden');
+        
+        games.forEach((g, idx) => {
+          const resolveNames = (pIds) => {
+            return pIds.map(id => {
+              const p = appData.players.find(x => x.id === id);
+              const name = p ? p.name : '<span class="text-slate-400 italic">Deleted Player</span>';
+              const typeBadge = p 
+                ? (p.type === 'member' ? '<span class="text-[9px] px-1 bg-brand-50 text-brand-700 border border-brand-200 rounded font-semibold">M</span>' : '<span class="text-[9px] px-1 bg-amber-50 text-amber-700 border border-amber-200 rounded font-semibold">N</span>')
+                : '';
+              return `<span class="font-bold text-slate-700 inline-flex items-center gap-1">${name} ${typeBadge}</span>`;
+            }).join(' & ');
+          };
+
+          const playersCount = g.teamA.length + g.teamB.length;
+          const gameShuttlesPrice = (g.shuttlecocksUsed || 0) * session.shuttlecockPrice;
+          const shuttlePricePerPerson = playersCount > 0 ? gameShuttlesPrice / playersCount : 0;
+
+          const borderClassA = g.winner === 'teamA' ? 'border-l-4 border-l-brand-500 bg-brand-50/20' : 'bg-slate-50/50 border-l-4 border-l-transparent';
+          const borderClassB = g.winner === 'teamB' ? 'border-l-4 border-l-accent-500 bg-accent-50/20' : 'bg-slate-50/50 border-l-4 border-l-transparent';
+
+          const trophyA = g.winner === 'teamA' ? '<i data-lucide="trophy" class="w-3.5 h-3.5 text-amber-500 inline"></i>' : '';
+          const trophyB = g.winner === 'teamB' ? '<i data-lucide="trophy" class="w-3.5 h-3.5 text-amber-500 inline"></i>' : '';
+
+          container.innerHTML += `
+            <div class="glassmorphism p-5 rounded-2xl shadow-sm relative group hover:border-slate-300 transition-all duration-300">
+              <div class="flex justify-between items-center mb-3">
+                <span class="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-[10px] font-bold text-slate-500">GAME #${idx + 1}</span>
+                
+                <div class="flex items-center gap-3">
+                  <div class="text-right">
+                    <span class="text-[10px] text-slate-400 block font-semibold leading-tight">Shuttles Fee</span>
+                    <span class="text-xs font-semibold text-slate-600 block">${formatCurrency(gameShuttlesPrice)} <span class="text-[10px] text-slate-400 font-normal">(${g.shuttlecocksUsed} pcs)</span></span>
+                  </div>
+                  <button onclick="deleteGame('${g.id}')" class="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg transition-all" title="Remove Game">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Score match details -->
+              <div class="grid grid-cols-1 md:grid-cols-5 items-center gap-4 py-2 border-t border-b border-slate-100 my-3">
+                <!-- Team A Players -->
+                <div class="md:col-span-2 p-3 rounded-xl ${borderClassA} space-y-1">
+                  <span class="text-[10px] text-brand-600 uppercase tracking-widest font-bold block mb-1">Team A ${trophyA}</span>
+                  <div class="text-xs space-y-1">${resolveNames(g.teamA)}</div>
+                </div>
+
+                <!-- Scores Comparison -->
+                <div class="flex flex-col items-center justify-center gap-1.5 md:col-span-1 py-2 bg-slate-50 rounded-xl border border-slate-200 shadow-inner">
+                  <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Scores</div>
+                  <div class="flex items-center gap-3">
+                    <div class="text-center">
+                      <span class="text-[8px] text-slate-400 block uppercase font-bold">Set 1</span>
+                      <span class="text-sm font-extrabold text-slate-800">${g.set1.teamA} : ${g.set1.teamB}</span>
+                    </div>
+                    <div class="h-6 w-px bg-slate-200"></div>
+                    <div class="text-center">
+                      <span class="text-[8px] text-slate-400 block uppercase font-bold">Set 2</span>
+                      <span class="text-sm font-extrabold text-slate-800">${g.set2.teamA} : ${g.set2.teamB}</span>
+                    </div>
+                  </div>
+                  <span class="px-2 py-0.5 rounded-full text-[8px] font-extrabold uppercase tracking-wider ${g.winner === 'draw' ? 'bg-slate-200 text-slate-500' : 'bg-brand-50 text-brand-700 border border-brand-100'}">
+                    ${g.winner === 'draw' ? 'Draw' : (g.winner === 'teamA' ? 'Team A Wins' : 'Team B Wins')}
+                  </span>
+                </div>
+
+                <!-- Team B Players -->
+                <div class="md:col-span-2 p-3 rounded-xl ${borderClassB} space-y-1 text-right">
+                  <span class="text-[10px] text-accent-600 uppercase tracking-widest font-bold block mb-1">Team B ${trophyB}</span>
+                  <div class="text-xs space-y-1">${resolveNames(g.teamB)}</div>
+                </div>
+              </div>
+
+              <!-- Individual pricing notes -->
+              <div class="flex justify-between items-center text-[10px] text-slate-400">
+                <span class="flex items-center gap-1"><i data-lucide="info" class="w-3.5 h-3.5"></i> ${playersCount} players split this game's shuttlecocks</span>
+                <span>Individual split: <strong class="text-slate-600">${formatCurrency(shuttlePricePerPerson)} / player</strong></span>
+              </div>
+            </div>
+          `;
+        });
+      }
+      lucide.createIcons();
+    }
+
+    function handleRecordGame(e) {
+      e.preventDefault();
+
+      const session = appData.sessions.find(s => s.id === activeSessionId);
+      if (!session) return;
+
+      const p1_a = document.getElementById('game-teama-player1').value;
+      const p2_a = document.getElementById('game-teama-player2').value;
+      const p1_b = document.getElementById('game-teamb-player1').value;
+      const p2_b = document.getElementById('game-teamb-player2').value;
+
+      const teamA = [p1_a];
+      if (p2_a) teamA.push(p2_a);
+
+      const teamB = [p1_b];
+      if (p2_b) teamB.push(p2_b);
+
+      const allSelectedPlayers = [...teamA, ...teamB];
+
+      if (allSelectedPlayers.length > 4) {
+        alert("A game can have a maximum of 4 players.");
+        return;
+      }
+      const duplicates = allSelectedPlayers.filter((item, index) => allSelectedPlayers.indexOf(item) !== index);
+      if (duplicates.length > 0) {
+        alert("Error: You cannot select the same player more than once in a single game.");
+        return;
+      }
+
+      const s1_a = parseInt(document.getElementById('game-set1-teama').value);
+      const s1_b = parseInt(document.getElementById('game-set1-teamb').value);
+      const s2_a = parseInt(document.getElementById('game-set2-teama').value);
+      const s2_b = parseInt(document.getElementById('game-set2-teamb').value);
+      const shuttles = parseInt(document.getElementById('game-shuttles').value);
+
+      let teamASets = 0;
+      let teamBSets = 0;
+      if (s1_a > s1_b) teamASets++; else if (s1_b > s1_a) teamBSets++;
+      if (s2_a > s2_b) teamASets++; else if (s2_b > s2_a) teamBSets++;
+
+      let winner = 'draw';
+      if (teamASets > teamBSets) {
+        winner = 'teamA';
+      } else if (teamBSets > teamASets) {
+        winner = 'teamB';
+      } else {
+        const totalPointsA = s1_a + s2_a;
+        const totalPointsB = s1_b + s2_b;
+        if (totalPointsA > totalPointsB) {
+          winner = 'teamA';
+        } else if (totalPointsB > totalPointsA) {
+          winner = 'teamB';
+        }
+      }
+
+      const newGame = {
+        id: 'g-' + Date.now(),
+        teamA,
+        teamB,
+        set1: { teamA: s1_a, teamB: s1_b },
+        set2: { teamA: s2_a, teamB: s2_b },
+        shuttlecocksUsed: shuttles,
+        winner
+      };
+
+      if (!session.games) {
+        session.games = [];
+      }
+      session.games.push(newGame);
+      saveState();
+
+      document.getElementById('game-set1-teama').value = '';
+      document.getElementById('game-set1-teamb').value = '';
+      document.getElementById('game-set2-teama').value = '';
+      document.getElementById('game-set2-teamb').value = '';
+      document.getElementById('game-shuttles').value = '';
+      document.getElementById('game-teama-player1').value = '';
+      document.getElementById('game-teama-player2').value = '';
+      document.getElementById('game-teamb-player1').value = '';
+      document.getElementById('game-teamb-player2').value = '';
+    }
+
+    function deleteGame(gId) {
+      const session = appData.sessions.find(s => s.id === activeSessionId);
+      if (!session) return;
+
+      if (!confirm("Are you sure you want to delete this game record?")) {
+        return;
+      }
+
+      session.games = session.games.filter(g => g.id !== gId);
+      saveState();
+    }
+
+    function renderPaymentSplits(session, calcs) {
+      const tbody = document.getElementById('payments-table-body');
+      tbody.innerHTML = '';
+
+      document.getElementById('payment-court-split-share').textContent = formatCurrency(calcs.courtSplitPerNonMember);
+
+      const warningDiv = document.getElementById('payment-court-warning');
+      if (session.courtPrice > 0 && calcs.nonMemberCount === 0 && session.games && session.games.length > 0) {
+        warningDiv.classList.remove('hidden');
+        document.getElementById('payment-warning-court-price').textContent = formatCurrency(session.courtPrice);
+      } else {
+        warningDiv.classList.add('hidden');
+      }
+
+      const playersList = Object.values(calcs.playerStats).sort((a, b) => a.name.localeCompare(b.name));
+
+      if (playersList.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="py-12 text-center text-slate-400 font-semibold bg-white">
+              No games logged in this session yet. Payments will automatically calculate once games are added.
+            </td>
+          </tr>
+        `;
+      } else {
+        playersList.forEach(p => {
+          const badgeClass = p.type === 'member' 
+            ? 'bg-brand-50 text-brand-700 border border-brand-100' 
+            : 'bg-amber-50 text-amber-700 border border-amber-100';
+          
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors">
+              <td class="py-4 px-4 font-bold text-slate-800">${p.name}</td>
+              <td class="py-4 px-4 text-center">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${badgeClass}">
+                  ${p.type}
+                </span>
+              </td>
+              <td class="py-4 px-4 text-center font-bold text-slate-500">${p.gamesPlayed}</td>
+              <td class="py-4 px-4 text-right font-semibold text-slate-600">${formatCurrency(p.courtCostShare)}</td>
+              <td class="py-4 px-4 text-right font-semibold text-slate-600">${formatCurrency(p.shuttleCostShare)}</td>
+              <td class="py-4 px-4 text-right font-extrabold text-slate-800 text-base">${formatCurrency(p.totalOwed)}</td>
+              <td class="py-4 px-4 text-center">
+                <label class="inline-flex items-center justify-center p-1 cursor-pointer select-none">
+                  <input type="checkbox" ${p.isPaid ? 'checked' : ''} onchange="togglePaymentPaidStatus('${session.id}', '${p.id}', this.checked)"
+                    class="w-5 h-5 text-brand-600 border-slate-300 focus:ring-brand-500 rounded cursor-pointer">
+                </label>
+              </td>
+            </tr>
+          `;
+        });
+      }
+    }
+
+    function togglePaymentPaidStatus(sessionId, playerID, isChecked) {
+      const session = appData.sessions.find(s => s.id === sessionId);
+      if (!session) return;
+
+      if (!session.paymentsPaid) {
+        session.paymentsPaid = [];
+      }
+
+      if (isChecked) {
+        if (!session.paymentsPaid.includes(playerID)) {
+          session.paymentsPaid.push(playerID);
+        }
+      } else {
+        session.paymentsPaid = session.paymentsPaid.filter(id => id !== playerID);
+      }
+      
+      saveState();
+    }
+
+    function renderSessionLeaderboard(calcs) {
+      const tbody = document.getElementById('session-leaderboard-table-body');
+      const fallback = document.getElementById('session-leaderboard-fallback');
+      tbody.innerHTML = '';
+
+      const leaderboardList = Object.values(calcs.playerStats).sort((a, b) => {
+        if (b.wins !== a.wins) return b.wins - a.wins;
+        const rateA = a.gamesPlayed > 0 ? (a.wins / a.gamesPlayed) : 0;
+        const rateB = b.gamesPlayed > 0 ? (b.wins / b.gamesPlayed) : 0;
+        if (rateB !== rateA) return rateB - rateA;
+        return (b.setsWon - b.setsLost) - (a.setsWon - a.setsLost);
+      });
+
+      if (leaderboardList.length === 0) {
+        fallback.classList.remove('hidden');
+      } else {
+        fallback.classList.add('hidden');
+        
+        leaderboardList.forEach((p, idx) => {
+          const winRate = p.gamesPlayed > 0 ? Math.round((p.wins / p.gamesPlayed) * 100) : 0;
+          const badgeClass = p.type === 'member' 
+            ? 'bg-brand-50 text-brand-700 border border-brand-100' 
+            : 'bg-amber-50 text-amber-700 border border-amber-100';
+          
+          const setsDiff = p.setsWon - p.setsLost;
+          const setsDiffText = setsDiff > 0 ? `+${setsDiff}` : setsDiff;
+
+          let rankLabel = `<span class="text-xs font-bold text-slate-400">${idx + 1}</span>`;
+          if (idx === 0) rankLabel = `<div class="w-6 h-6 rounded bg-gradient-to-tr from-amber-400 to-yellow-600 text-white flex items-center justify-center font-bold text-xs shadow">1</div>`;
+          else if (idx === 1) rankLabel = `<div class="w-6 h-6 rounded bg-gradient-to-tr from-slate-300 to-slate-400 text-slate-800 flex items-center justify-center font-bold text-xs shadow">2</div>`;
+          else if (idx === 2) rankLabel = `<div class="w-6 h-6 rounded bg-gradient-to-tr from-amber-600 to-amber-700 text-white flex items-center justify-center font-bold text-xs shadow">3</div>`;
+
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors">
+              <td class="py-4 px-4 text-center flex justify-center">${rankLabel}</td>
+              <td class="py-4 px-4 font-bold text-slate-800">${p.name}</td>
+              <td class="py-4 px-4 text-center">
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${badgeClass}">
+                  ${p.type}
+                </span>
+              </td>
+              <td class="py-4 px-4 text-center font-bold text-slate-500">${p.gamesPlayed}</td>
+              <td class="py-4 px-4 text-center font-bold text-brand-600">${p.wins}</td>
+              <td class="py-4 px-4 text-center font-bold text-red-500">${p.losses}</td>
+              <td class="py-4 px-4 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <span class="font-bold text-slate-700">${winRate}%</span>
+                  <div class="hidden sm:block w-12 bg-slate-100 rounded-full h-1 overflow-hidden">
+                    <div class="bg-brand-500 h-full rounded-full" style="width: ${winRate}%"></div>
+                  </div>
+                </div>
+              </td>
+              <td class="py-4 px-4 text-center font-bold ${setsDiff > 0 ? 'text-brand-600' : (setsDiff < 0 ? 'text-red-500' : 'text-slate-400')}">${setsDiffText}</td>
+            </tr>
+          `;
+        });
+      }
+    }
+
+    // --- VIEW HANDLER: OVERALL LEADERBOARD ---
+    function computeAllTimeStandings() {
+      const standings = {};
+
+      appData.players.forEach(p => {
+        standings[p.id] = {
+          id: p.id,
+          name: p.name,
+          type: p.type,
+          sessionsCount: 0,
+          gamesPlayed: 0,
+          wins: 0,
+          losses: 0,
+          setsWon: 0,
+          setsLost: 0
+        };
+      });
+
+      appData.sessions.forEach(s => {
+        const sessionPlayers = new Set();
+        const games = s.games || [];
+
+        games.forEach(g => {
+          const playersInGame = [...g.teamA, ...g.teamB];
+          playersInGame.forEach(pId => sessionPlayers.add(pId));
+
+          const set1A = g.set1.teamA;
+          const set1B = g.set1.teamB;
+          const set2A = g.set2.teamA;
+          const set2B = g.set2.teamB;
+
+          let teamASets = 0;
+          let teamBSets = 0;
+          if (set1A > set1B) teamASets++; else if (set1B > set1A) teamBSets++;
+          if (set2A > set2B) teamASets++; else if (set2B > set2A) teamBSets++;
+
+          let gameWinner = 'draw';
+          if (teamASets > teamBSets) {
+            gameWinner = 'teamA';
+          } else if (teamBSets > teamASets) {
+            gameWinner = 'teamB';
+          } else {
+            const totalPointsA = set1A + set2A;
+            const totalPointsB = set1B + set2B;
+            if (totalPointsA > totalPointsB) {
+              gameWinner = 'teamA';
+            } else if (totalPointsB > totalPointsA) {
+              gameWinner = 'teamB';
+            }
+          }
+
+          g.teamA.forEach(pId => {
+            if (!standings[pId]) return; 
+            standings[pId].gamesPlayed++;
+            standings[pId].setsWon += teamASets;
+            standings[pId].setsLost += teamBSets;
+            if (gameWinner === 'teamA') standings[pId].wins++;
+            else if (gameWinner === 'teamB') standings[pId].losses++;
+          });
+
+          g.teamB.forEach(pId => {
+            if (!standings[pId]) return;
+            standings[pId].gamesPlayed++;
+            standings[pId].setsWon += teamBSets;
+            standings[pId].setsLost += teamASets;
+            if (gameWinner === 'teamB') standings[pId].wins++;
+            else if (gameWinner === 'teamA') standings[pId].losses++;
+          });
+        });
+
+        sessionPlayers.forEach(pId => {
+          if (standings[pId]) {
+            standings[pId].sessionsCount++;
+          }
+        });
+      });
+
+      return Object.values(standings);
+    }
+
+    function renderOverallLeaderboard() {
+      const sortBy = document.getElementById('leaderboard-sort-by').value;
+      const tbody = document.getElementById('overall-leaderboard-table-body');
+      const fallback = document.getElementById('overall-leaderboard-fallback');
+      tbody.innerHTML = '';
+
+      const data = computeAllTimeStandings();
+      const participants = data.filter(p => p.gamesPlayed > 0);
+
+      participants.sort((a, b) => {
+        if (sortBy === 'winrate') {
+          const rateA = a.gamesPlayed > 0 ? (a.wins / a.gamesPlayed) : 0;
+          const rateB = b.gamesPlayed > 0 ? (b.wins / b.gamesPlayed) : 0;
+          if (rateB !== rateA) return rateB - rateA;
+          if (b.wins !== a.wins) return b.wins - a.wins;
+          return (b.setsWon - b.setsLost) - (a.setsWon - a.setsLost);
+        } else if (sortBy === 'wins') {
+          if (b.wins !== a.wins) return b.wins - a.wins;
+          const rateA = a.gamesPlayed > 0 ? (a.wins / a.gamesPlayed) : 0;
+          const rateB = b.gamesPlayed > 0 ? (b.wins / b.gamesPlayed) : 0;
+          return rateB - rateA;
+        } else if (sortBy === 'played') {
+          return b.gamesPlayed - a.gamesPlayed;
+        }
+      });
+
+      if (participants.length === 0) {
+        fallback.classList.remove('hidden');
+      } else {
+        fallback.classList.add('hidden');
+        
+        participants.forEach((p, idx) => {
+          const winRate = p.gamesPlayed > 0 ? Math.round((p.wins / p.gamesPlayed) * 100) : 0;
+          const badgeClass = p.type === 'member' 
+            ? 'bg-brand-50 text-brand-700 border border-brand-100' 
+            : 'bg-amber-50 text-amber-700 border border-amber-100';
+          
+          const setsDiff = p.setsWon - p.setsLost;
+          const setsDiffText = setsDiff > 0 ? `+${setsDiff}` : setsDiff;
+
+          let rankLabel = `<span class="text-xs font-bold text-slate-400">${idx + 1}</span>`;
+          if (idx === 0) rankLabel = `<div class="w-6 h-6 rounded bg-gradient-to-tr from-amber-400 to-yellow-600 text-white flex items-center justify-center font-bold text-xs shadow">1</div>`;
+          else if (idx === 1) rankLabel = `<div class="w-6 h-6 rounded bg-gradient-to-tr from-slate-300 to-slate-400 text-slate-800 flex items-center justify-center font-bold text-xs shadow">2</div>`;
+          else if (idx === 2) rankLabel = `<div class="w-6 h-6 rounded bg-gradient-to-tr from-amber-600 to-amber-700 text-white flex items-center justify-center font-bold text-xs shadow">3</div>`;
+
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors">
+              <td class="py-4 px-4 text-center flex justify-center">${rankLabel}</td>
+              <td class="py-4 px-4 font-bold text-slate-800">${p.name}</td>
+              <td class="py-4 px-4 text-center">
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${badgeClass}">
+                  ${p.type}
+                </span>
+              </td>
+              <td class="py-4 px-4 text-center font-bold text-slate-500">${p.sessionsCount}</td>
+              <td class="py-4 px-4 text-center font-bold text-slate-600">${p.gamesPlayed}</td>
+              <td class="py-4 px-4 text-center font-bold text-brand-600">${p.wins}</td>
+              <td class="py-4 px-4 text-center font-bold text-red-500">${p.losses}</td>
+              <td class="py-4 px-4 text-center font-bold ${setsDiff > 0 ? 'text-brand-600' : (setsDiff < 0 ? 'text-red-500' : 'text-slate-400')}">${setsDiffText}</td>
+              <td class="py-4 px-4 text-right">
+                <div class="flex items-center justify-end gap-2.5">
+                  <span class="font-extrabold text-slate-800 text-base">${winRate}%</span>
+                  <div class="w-16 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                    <div class="bg-gradient-to-r from-brand-500 to-emerald-400 h-full rounded-full" style="width: ${winRate}%"></div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          `;
+        });
+      }
+    }
+  </script>
+</body>
+</html>
