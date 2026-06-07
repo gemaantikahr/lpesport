@@ -360,15 +360,15 @@
               <ul class="text-xs text-slate-600 space-y-2 leading-relaxed">
                 <li class="flex items-start gap-2">
                   <span class="w-1.5 h-1.5 rounded-full bg-brand-500 mt-1.5 shrink-0"></span>
-                  <span><strong>Court Price</strong> is split equally among all players who participated in the session.</span>
+                  <span><strong>Court Fee Share</strong>: <code>Court Price each player &times; games played</code> (Members are set to 0).</span>
                 </li>
                 <li class="flex items-start gap-2">
                   <span class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0"></span>
-                  <span><strong>Shuttlecocks share</strong> is split equally among all players who participated in the session (Total shuttlecocks used &times; shuttle price &divide; number of participants).</span>
+                  <span><strong>Shuttlecock Fee Share</strong>: <code>Shuttlecock each player &times; games played</code>.</span>
                 </li>
                 <li class="flex items-start gap-2">
                   <span class="w-1.5 h-1.5 rounded-full bg-accent-500 mt-1.5 shrink-0"></span>
-                  <span><strong>Calculations</strong> are done per person: <code>(total court + total shuttlecocks cost) &divide; (total participants)</code>.</span>
+                  <span><strong>Total Cost</strong>: Court Fee Share + Shuttlecock Fee Share.</span>
                 </li>
               </ul>
             </div>
@@ -505,13 +505,13 @@
 
                 <div class="grid grid-cols-2 gap-3">
                   <div>
-                    <label for="session-court-price" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Court Price (IDR)</label>
-                    <input type="number" id="session-court-price" required min="0" placeholder="e.g. 150000"
+                    <label for="session-court-price" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Court Price (IDR) each player</label>
+                    <input type="number" id="session-court-price" required min="0" placeholder="e.g. 5000"
                       class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-sm font-medium">
                   </div>
                   <div>
-                    <label for="session-shuttle-price" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Shuttlecock (IDR)</label>
-                    <input type="number" id="session-shuttle-price" required min="0" placeholder="e.g. 6000"
+                    <label for="session-shuttle-price" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Shuttlecock (IDR) each player</label>
+                    <input type="number" id="session-shuttle-price" required min="0" placeholder="e.g. 2000"
                       class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-sm font-medium">
                   </div>
                 </div>
@@ -560,9 +560,9 @@
                 <span class="text-xs font-bold text-brand-600 tracking-wider uppercase">Active Session Details</span>
                 <h3 class="text-xl font-bold text-slate-800 tracking-tight mt-0.5" id="detail-session-date">June 7, 2026</h3>
                 <div class="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-500">
-                  <span class="flex items-center gap-1"><i data-lucide="building" class="w-3.5 h-3.5"></i> Court Price: <strong class="text-slate-700" id="detail-court-price">-</strong></span>
+                  <span class="flex items-center gap-1"><i data-lucide="building" class="w-3.5 h-3.5"></i> Court Price/player/game: <strong class="text-slate-700" id="detail-court-price">-</strong></span>
                   <span class="text-slate-300">•</span>
-                  <span class="flex items-center gap-1"><i data-lucide="circle-dot" class="w-3.5 h-3.5"></i> Shuttle price: <strong class="text-slate-700" id="detail-shuttle-price">-</strong></span>
+                  <span class="flex items-center gap-1"><i data-lucide="circle-dot" class="w-3.5 h-3.5"></i> Shuttle price/player/game: <strong class="text-slate-700" id="detail-shuttle-price">-</strong></span>
                 </div>
               </div>
             </div>
@@ -692,11 +692,11 @@
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 class="text-lg font-bold text-slate-800 tracking-tight">Session Cost Breakdown & Billing Sheet</h3>
-                <p class="text-xs text-slate-500">See detailed payments split equally for all players (shuttlecocks + court split).</p>
+                <p class="text-xs text-slate-500">See detailed payments for each player (shuttlecocks + court fee shares).</p>
               </div>
               <div class="bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-600 flex items-center gap-2">
                 <i data-lucide="alert-circle" class="w-4 h-4 text-brand-600"></i>
-                <span>Court price split per person: <strong class="text-amber-600" id="payment-court-split-share">IDR 0</strong> / player</span>
+                <span>Court price per player/game: <strong class="text-amber-600" id="payment-court-split-share">IDR 0</strong></span>
               </div>
             </div>
 
@@ -1182,20 +1182,6 @@
         g.teamB.forEach(pId => uniquePlayersSet.add(pId));
       });
       const uniquePlayers = Array.from(uniquePlayersSet);
-      const totalPlayersCount = uniquePlayers.length;
-
-      // Court fee split: split courtPrice equally among all players in this session
-      const courtSplitPerPlayer = totalPlayersCount > 0 ? courtPrice / totalPlayersCount : 0;
-
-      // Calculate total shuttlecocks used in this session
-      let totalShuttlecocksUsed = 0;
-      games.forEach(g => {
-        totalShuttlecocksUsed += g.shuttlecocksUsed || 0;
-      });
-
-      // Total shuttlecock cost share per player (split equally among session participants)
-      const totalShuttleCost = totalShuttlecocksUsed * shuttlecockPrice;
-      const shuttleCostPerPlayer = totalPlayersCount > 0 ? totalShuttleCost / totalPlayersCount : 0;
 
       // Find how many of them are non-members
       const nonMembersInSession = uniquePlayers.filter(pId => {
@@ -1217,9 +1203,9 @@
           losses: 0,
           setsWon: 0,
           setsLost: 0,
-          shuttleCostShare: shuttleCostPerPlayer,
-          courtCostShare: courtSplitPerPlayer,
-          totalOwed: shuttleCostPerPlayer + courtSplitPerPlayer,
+          shuttleCostShare: 0,
+          courtCostShare: 0,
+          totalOwed: 0,
           isPaid: session.paymentsPaid ? session.paymentsPaid.includes(pId) : false
         };
       });
@@ -1284,11 +1270,19 @@
         });
       });
 
+      // Compute costs based on game count for each player
+      Object.keys(playerStats).forEach(pId => {
+        const stats = playerStats[pId];
+        stats.shuttleCostShare = shuttlecockPrice * stats.gamesPlayed;
+        stats.courtCostShare = (stats.type === 'non-member') ? (courtPrice * stats.gamesPlayed) : 0;
+        stats.totalOwed = stats.shuttleCostShare + stats.courtCostShare;
+      });
+
       return {
         playerStats,
         uniquePlayers,
         nonMemberCount,
-        courtSplitPerNonMember: courtSplitPerPlayer
+        courtSplitPerNonMember: courtPrice
       };
     }
 
